@@ -29,6 +29,15 @@ class EvaluationResult:
     number_of_requests_served: int
     number_of_requests_unserved: int
     percentage_of_served_requests: float
+
+    raw_travel_time_part: float
+    raw_travel_cost_part: float
+    raw_capacity_balancing_part: float
+
+    weighted_travel_time_part: float
+    weighted_travel_cost_part: float
+    weighted_capacity_balancing_part: float
+
     total_travel_time: float
     total_travel_distance: float
     total_objective_value: float

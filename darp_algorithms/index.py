@@ -21,16 +21,27 @@ from darp_algorithms.scenario import RequestGenerator, ScenarioConfig, VehicleGe
 
 
 def build_darp_config_basic() -> DarpConfig:
+    """
+    Gibt die DarpConfig für ein Basis-Szenario zurück.
+
+    Im Ausgangs-Szenario gilt Folgendes:
+
+    - Keine Fahrtzeit-Beschränkung
+    - Weite Zeitfenster an den Abholknoten
+    - Fahrzeug-Kapazitäten nicht bindend
+    - Zwei Optimierungsziele: Minimierung der Gesamt-Fahrtzeit und der Gesamt-Fahrtkosten
+
+    :return:
+    """
+
     return DarpConfig(
-        vehicle_capacity=20,
-        service_duration=timedelta(seconds=30),
-        pickup_buffer=timedelta(minutes=15),
+        vehicle_capacity=100,
+        service_duration=timedelta(seconds=10),
+        pickup_buffer=timedelta(minutes=20),
         objective_config=ObjectiveConfig(
             use_total_travel_time=True,
-            travel_time_weight=4.0,
             use_travel_cost=True,
-            travel_cost_weight=1.0,
-            cost_per_kilometer=2.2,
+            use_capacity_balancing=False
         ),
         constraint_config=ConstraintConfig(
             use_max_ride_time=False
@@ -39,16 +50,27 @@ def build_darp_config_basic() -> DarpConfig:
 
 
 def build_darp_config_time_restrictive() -> DarpConfig:
+    """
+    Gibt die DarpConfig für ein zeitlich restriktives Szenario zurück.
+
+    Im zeitlich restriktiven Szenario gilt Folgendes:
+
+    - Enge Zeitfenster an den Abholknoten durch erhöhter Service-Zeiten und eines kleineren Pickup-Puffers
+    - Keine Fahrtzeit-Beschränkung
+    - Fahrzeug-Kapazitäten weiterhin nicht bindend
+    - Zwei Optimierungsziele: Minimierung der Gesamt-Fahrtzeit und der Gesamt-Fahrtkosten
+
+    :return:
+    """
+
     return DarpConfig(
-        vehicle_capacity=20,
+        vehicle_capacity=100,
         service_duration=timedelta(seconds=90),
         pickup_buffer=timedelta(minutes=3),
         objective_config=ObjectiveConfig(
             use_total_travel_time=True,
-            travel_time_weight=4.0,
             use_travel_cost=True,
-            travel_cost_weight=1.0,
-            cost_per_kilometer=2.2,
+            use_capacity_balancing=False
         ),
         constraint_config=ConstraintConfig(
             use_max_ride_time=False
@@ -56,38 +78,136 @@ def build_darp_config_time_restrictive() -> DarpConfig:
     )
 
 
-def build_scenario_config_basic(*, random_seed: int) -> ScenarioConfig:
-    return ScenarioConfig(
-        random_seed=random_seed,
-        number_of_requests=20,
-        number_of_vehicles=4,
-        scenario_start_time=datetime(2026, 3, 5, 8, 0, 0),
-        scenario_end_time=datetime(2026, 3, 5, 16, 0, 0),
+def build_darp_config_resource_restrictive() -> DarpConfig:
+    """
+    Gibt die DarpConfig für ein ressourcen restriktives Szenario zurück. Es baut auf den zeitlich restriktiven Szenario
+    auf und erweitert es zusätzlich im kapazitäts- und fahrtzeitbezogene Restriktionen und Auslastungsbalancing.
+
+    Im ressourcen restriktiven Szenario gilt Folgendes:
+
+    - Enge Zeitfenster an den Abholknoten durch höhere Service-Zeit und kleineren Pickup-Puffer
+    - Maximale Fahrtzeit-Beschränkung
+    - Fahrzeug-Kapazitäten sind bindend
+    - Drei Optimierungsziele: Minimierung der Gesamt-Fahrtzeit, der Gesamt-Fahrtkosten und der Balancierung der
+    Fahrzeugauslastung
+
+    :return:
+    """
+
+    return DarpConfig(
+        vehicle_capacity=4,
+        service_duration=timedelta(seconds=90),
+        pickup_buffer=timedelta(minutes=3),
+        objective_config=ObjectiveConfig(
+            use_total_travel_time=True,
+            use_travel_cost=True,
+            use_capacity_balancing=True,
+        ),
+        constraint_config=ConstraintConfig(
+            use_max_ride_time=True,
+            mrt_factor=1.5
+        ),
     )
 
 
-def build_scenario_config_time_restrictive(*, random_seed: int) -> ScenarioConfig:
+def build_scenario_config_basic(*, random_seed: int) -> ScenarioConfig:
+    """
+    Gibt die ScenarioConfig für ein Basis-Szenario zurück.
+
+    Im Ausgangs-Szenario gilt Folgendes:
+
+    - Geringe Instanzgröße => wenige Fahrzeuge und Anfragen
+    - Großzügiges Verhältnis von Anfragen und Service-Zeitraum
+
+    :param random_seed:
+    :return:
+    """
+
     return ScenarioConfig(
         random_seed=random_seed,
         number_of_requests=20,
         number_of_vehicles=4,
         scenario_start_time=datetime(2026, 3, 5, 10, 0, 0),
-        scenario_end_time=datetime(2026, 3, 5, 12, 0, 0),
+        scenario_end_time=datetime(2026, 3, 5, 18, 0, 0),
     )
+
+
+def build_scenario_config_time_restrictive(*, random_seed: int) -> ScenarioConfig:
+    """
+    Gibt die ScenarioConfig für ein zeitlich restriktives Szenario zurück.
+
+    Im zeitlich restriktiven Szenario gilt Folgendes:
+
+    - Weiterhin besteht eine geringe Instanzgröße, also wenige Fahrzeuge und Anfragen
+    - Aber das Verhältnis von Anzahl der Anfragen zum Service-Zeitraum wird ungünstiger
+
+    :param random_seed:
+    :return:
+    """
+
+    return ScenarioConfig(
+        random_seed=random_seed,
+        number_of_requests=20,
+        number_of_vehicles=4,
+        scenario_start_time=datetime(2026, 3, 5, 10, 0, 0),
+        scenario_end_time=datetime(2026, 3, 5, 11, 30, 0),
+    )
+
+
+def build_scenario_config_resource_restrictive(*, random_seed: int) -> ScenarioConfig:
+    """
+    Gibt die ScenarioConfig für ein ressourcen restriktives Szenario zurück.
+
+    Im ressourcen restriktiven Szenario gilt Folgendes:
+
+    - Weiterhin eine geringe Instanzgröße => wenige Fahrzeuge und Anfragen
+    - Die Passagieranzahl pro Anfrage liegt nun zwischen 2 und 4 statt standardmäßig zwischen 1 und 3.
+
+    :param random_seed:
+    :return:
+    """
+
+    return ScenarioConfig(
+        random_seed=random_seed,
+        number_of_requests=20,
+        number_of_vehicles=4,
+        scenario_start_time=datetime(2026, 3, 5, 10, 0, 0),
+        scenario_end_time=datetime(2026, 3, 5, 11, 30, 0),
+        min_passengers=2,
+        max_passengers=4,
+    )
+
+
+# ==============================
+#      Szenario-Mapping
+# ==============================
+
+SCENARIOS = {
+    "1": {
+        "name": "basic",
+        "scenario_config": build_scenario_config_basic,
+        "darp_config": build_darp_config_basic,
+    },
+    "2": {
+        "name": "time_restrictive",
+        "scenario_config": build_scenario_config_time_restrictive,
+        "darp_config": build_darp_config_time_restrictive,
+    },
+    "3": {
+        "name": "resource_restrictive",
+        "scenario_config": build_scenario_config_resource_restrictive,
+        "darp_config": build_darp_config_resource_restrictive,
+    },
+}
 
 
 def run_single_experiment(
         *,
         random_seed: int,
+        scenario_name: str,
+        scenario_config: ScenarioConfig,
+        darp_config: DarpConfig,
 ) -> list:
-    # scenario_name = "basic"
-    # scenario_config = build_scenario_config_basic(random_seed=random_seed)
-    # darp_config = build_darp_config_basic()
-
-    scenario_name = "time_restrictive"
-    scenario_config = build_scenario_config_time_restrictive(random_seed=random_seed)
-    darp_config = build_darp_config_time_restrictive()
-
     requests = RequestGenerator(
         scenario_config=scenario_config,
     ).generate_requests()
@@ -168,11 +288,39 @@ def run_single_experiment(
 
 
 def main() -> None:
-    seeds = list(range(20))
+    print("Wähle ein Szenario:")
+    print("1 - basic")
+    print("2 - time_restrictive")
+    print("3 - resource_restrictive")
+
+    scenario_choice = input("Eingabe: ").strip()
+    scenario = SCENARIOS.get(scenario_choice)
+
+    if scenario is None:
+        print("Ungültige Auswahl")
+        return
+
+    num_seeds = int(input("Wie viele Seeds sollen verwendet werden? "))
+    start_seed = int(input("Start-Seed: "))
+
+    seeds = list(range(start_seed, start_seed + num_seeds))
+
+    print(f"\nStarte Experimente für Szenario: {scenario['name']}")
+    print(f"Seeds: {seeds}\n")
+
     all_results = []
 
     for seed in seeds:
-        experiment_results = run_single_experiment(random_seed=seed)
+        scenario_config = scenario["scenario_config"](random_seed=seed)
+        darp_config = scenario["darp_config"]()
+
+        experiment_results = run_single_experiment(
+            random_seed=seed,
+            scenario_name=scenario["name"],
+            scenario_config=scenario_config,
+            darp_config=darp_config,
+        )
+
         all_results.extend(experiment_results)
 
         for result in experiment_results:
