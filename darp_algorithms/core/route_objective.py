@@ -41,6 +41,14 @@ def compute_solution_objective_function(
 
 
 def compute_capacity_imbalance(*, route_states: list[RouteState]) -> float:
+    """
+    Berechnet den gewichteten Anteil der Imbalance am Zielfunktionswert
+
+    Die Imbalance entspricht der Varianz der durchnittlichen Auslastung der Fahrzeugauslastung über eine Route
+
+    :param route_states:
+    :return:
+    """
     # Wenn keine RouteStates übergeben werden, kann kein Imbalance-Wert berechnet werden
     if len(route_states) == 0:
         return 0.0

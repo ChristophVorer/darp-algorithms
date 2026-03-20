@@ -34,12 +34,12 @@ class ScenarioConfig:
     """
     Bounding-Box, die den Wertebereich der Koordinaten der Abhol-und Zielort der Anfragen definiert.
     
-    Die Standardwerte bilden eine Bounding-Box um Münster herum.
+    Die Standardwerte bilden eine Bounding-Box um Münster ca. 5 km um die Innenstadt herum.
     """
-    min_lat: float = 51.86
-    max_lat: float = 52.04
-    min_lon: float = 7.53
-    max_lon: float = 7.76
+    min_lat: float = 51.9116
+    max_lat: float = 52.0016
+    min_lon: float = 7.5651
+    max_lon: float = 7.7103
 
     """
     Koordinaten-Paar, welches den Standort des Depots beschreibt.
@@ -50,5 +50,5 @@ class ScenarioConfig:
     """
     Die minimale und maximale Luftlinien-Distanz von Abhol- und Zielort innerhalb einer Anfrage
     """
-    min_direct_distance_km: float = 0.5
-    max_direct_distance_km: float = 15.0
+    min_direct_distance_km: float = 1.0
+    max_direct_distance_km: float = 5.0

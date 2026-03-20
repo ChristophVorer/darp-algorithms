@@ -45,4 +45,4 @@ class ObjectiveConfig:
     travel_cost_weight: float = 110
 
     # Gewichtungsparameter der Balancierung der Fahrzeugauslastungen (Imbalance)
-    capacity_balancing_weight: float = 200000.0
+    capacity_balancing_weight: float = 220000.0

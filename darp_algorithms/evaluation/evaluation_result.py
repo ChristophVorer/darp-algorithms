@@ -7,6 +7,8 @@ from dataclasses import dataclass
 class EvaluationResult:
     """
     Klasse zum Kapseln der Evaluationsparameter
+
+    Enthält Metriken über die Durchführung eines Experiments auf genau einem Seed für genau einen Solver.
     """
     # Experiment-Id - Zum Trennen der einzelnen Solver-Durchläufe
     experiment_name: str

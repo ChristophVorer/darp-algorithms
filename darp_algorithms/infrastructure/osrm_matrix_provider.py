@@ -12,6 +12,16 @@ TravelTimeFn = Callable[[Location, Location], timedelta]
 TravelDistanceFn = Callable[[Location, Location], float]
 
 
+class OsrmMatrixValidationException(Exception):
+    """
+    Diese Exception wird geworfen, wenn ein Fehler bei der Validierung der OsrmMatrix auftritt.
+
+    Dies kann beispielsweise bei Koordinaten entstehen für die OSRM keine Fahrprofil-Daten zur Verfügung stellt. Dies
+    kann der Fall sein, wenn eine Koordinate sich im Wasser oder in einem Wald befindet.
+    """
+    pass
+
+
 @dataclass(frozen=True)
 class MatrixData:
     time_matrix_seconds: list[list[float]]
@@ -149,6 +159,7 @@ class OsrmMatrixProvider:
         """
         Überprüft, ob die übergebene Matrix quadratisch ist und für jede Position einen Eintrag enthält. Das stellt
         sicher, dass für jede Location-Kombination ein Wert in der jeweiligen Matrix vorhanden ist.
+
         :param matrix:
         :return:
         """
@@ -157,8 +168,9 @@ class OsrmMatrixProvider:
                 raise RuntimeError("OSRM-Matrix ist nicht quadratisch.")
             for column_index, column_value in enumerate(row):
                 if column_value is None:
-                    raise RuntimeError(
+                    # Der Wert "a7f3c9d2" wird später nur zur Identifizierung der Exception genutzt
+                    raise OsrmMatrixValidationException(
                         f"Die OSRM-Matrix enthält einen None-Wert an der Position "
                         f"({row_index},{column_index}). "
-                        "Es konnte keine Route für dieses Location-Paar berechnet werden."
+                        "Es konnte keine Route für dieses Location-Paar berechnet werden.(a7f3c9d2)"
                     )
