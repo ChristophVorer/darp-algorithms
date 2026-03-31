@@ -33,9 +33,9 @@ class ObjectiveConfig:
     #    Gewichtungsparameter:
     #    Die Gewichte der Optimierungsziele richten sich nach den Durchschnittswerten der Rohanteile an dem
     #    Zielfunktionswert pro Optimierungsziel. Dazu wurden im ressourcen restriktiven Szenario alle Lösungsverfahren
-    #    ohne jegliche Gewichtung auf 20 Durchläufe angewandt und die Rohanteile der Optimierungsziele am Zielfunktionswert
-    #    berechnet. Danach wurden die Standard-Gewichte so festgelegt, dass die jeweiligen gewichteten Anteile der
-    #    Optimierungsziele am Zielfunktionswert ungefähr in der gleichen Größenordnung liegen.
+    #    ohne jegliche Gewichtung auf 20 Durchläufe angewandt und die Rohanteile der Optimierungsziele am
+    #    Zielfunktionswert berechnet. Danach wurden die Standard-Gewichte so festgelegt, dass die jeweiligen gewichteten
+    #    Anteile der Optimierungsziele am Zielfunktionswert ungefähr in der gleichen Größenordnung liegen.
     # ==================================================================================================================
 
     # Gewichtungsparameter der Gesamt-Fahrtzeit
@@ -45,4 +45,4 @@ class ObjectiveConfig:
     travel_cost_weight: float = 110
 
     # Gewichtungsparameter der Balancierung der Fahrzeugauslastungen (Imbalance)
-    capacity_balancing_weight: float = 220000.0
+    capacity_balancing_weight: float = 550000.0

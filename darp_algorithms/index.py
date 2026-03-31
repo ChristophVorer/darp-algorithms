@@ -111,7 +111,7 @@ def build_darp_config_resource_restrictive() -> DarpConfig:
             use_capacity_balancing=True,
             travel_time_weight=1.0,
             travel_cost_weight=110,
-            capacity_balancing_weight=220000.0,
+            capacity_balancing_weight=550000.0,
         ),
         constraint_config=ConstraintConfig(
             use_max_ride_time=True,
@@ -299,22 +299,6 @@ def run_single_experiment(
     scenario_config, darp_config, darp_instance = build_reproducible_instance(
         scenario_name=scenario_name,
         base_seed=random_seed,
-    )
-
-    requests = RequestGenerator(
-        scenario_config=scenario_config,
-    ).generate_requests()
-
-    vehicles = VehicleGenerator(
-        scenario_config=scenario_config,
-    ).generate_vehicles()
-
-    darp_instance = DarpInstanceGenerator(
-        osrm_matrix_provider=OsrmMatrixProvider(),
-    ).generate_instance(
-        darp_config=darp_config,
-        vehicles=vehicles,
-        requests=requests,
     )
 
     experiment_name = (
