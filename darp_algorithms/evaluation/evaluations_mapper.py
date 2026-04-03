@@ -19,7 +19,8 @@ def build_evaluation_result(
         solution_metrics: SolutionMetrics,
 ) -> EvaluationResult:
     """
-    Mappt die Parameter eines Solver-Durchlaufs auf ein EvaluationResult-Objekt.
+    Mappt die Parameter eines Solver-Durchlaufs auf ein EvaluationResult.
+
     :param scenario_name:
     :param experiment_name:
     :param solver_name:
@@ -40,6 +41,12 @@ def build_evaluation_result(
         number_of_requests_served=solution_metrics.number_of_requests_served,
         number_of_requests_unserved=solution_metrics.number_of_requests_unserved,
         percentage_of_served_requests=solution_metrics.percentage_of_served_requests,
+        raw_travel_time_part=solution_metrics.raw_travel_time_part,
+        raw_travel_cost_part=solution_metrics.raw_travel_cost_part,
+        raw_capacity_balancing_part=solution_metrics.raw_capacity_balancing_part,
+        weighted_travel_time_part=solution_metrics.weighted_travel_time_part,
+        weighted_travel_cost_part=solution_metrics.weighted_travel_cost_part,
+        weighted_capacity_balancing_part=solution_metrics.weighted_capacity_balancing_part,
         number_of_routes=solution_metrics.number_of_routes,
         number_of_requests_total=solution_metrics.number_of_requests_total,
         number_of_feasible_routes=solution_metrics.number_of_feasible_routes,
@@ -59,6 +66,15 @@ def write_evaluation_result_to_csv_file(
         results: list[EvaluationResult],
         output_path: str,
 ) -> None:
+    """
+    Schreibt das gesamte Evaluation-Result in eine Zeile der /artifacts/evaluation_result.csv.
+
+    Existiert bereits eine Datei wird die Zeile an die bestehende CSV-Datei angehangen
+
+    :param results:
+    :param output_path:
+    :return:
+    """
     if not results:
         raise ValueError("Die Result-Liste darf nicht leer sein.")
 
@@ -78,32 +94,42 @@ def write_evaluation_result_to_csv_file(
 
 
 def print_evaluation_result(result: EvaluationResult) -> None:
+    """
+    Gibt ausgewählte Metriken des Evaluation-Result zur Laufzeit in der Konsole aus.
+
+    :param result:
+    :return:
+    """
     print("\n=== Evaluation Result ===")
-    print(f"Experiment-Name:                  {result.experiment_name}")
-    print(f"Szenario:                         {result.scenario_name}")
-    print(f"Solver:                           {result.solver_name}")
-    print(f"Random seed:                      {result.random_seed}")
-    print(f"Anfragen:                         {result.number_of_requests}")
-    print(f"Fahrzeuge:                        {result.number_of_vehicles}")
-    print(f"Fahrzeug-Kapazität:               {result.vehicle_capacity}")
+    print(f"Experiment-Name:                                      {result.experiment_name}")
+    print(f"Szenario:                                             {result.scenario_name}")
+    print(f"Solver:                                               {result.solver_name}")
+    print(f"Random seed:                                          {result.random_seed}")
+    print(f"Anfragen:                                             {result.number_of_requests}")
+    print(f"Fahrzeuge:                                            {result.number_of_vehicles}")
+    print(f"Fahrzeug-Kapazität:                                   {result.vehicle_capacity}")
 
     print("\nService:")
-    print(f"  Bediente Anfragen:              {result.number_of_requests_served}")
-    print(f"  Nicht bediente Anfragen:        {result.number_of_requests_unserved}")
-    print(f"  Bediente Anfragen (in Prozent): {result.percentage_of_served_requests:.2f}%")
+    print(f"  Bediente Anfragen:                                  {result.number_of_requests_served}")
+    print(f"  Nicht bediente Anfragen:                            {result.number_of_requests_unserved}")
+    print(f"  Bediente Anfragen (in Prozent):                     {result.percentage_of_served_requests:.2f}%")
 
     print("\nRouten:")
-    print(f"  Anzahl der Routen:              {result.number_of_routes}")
-    print(f"  Zulässige Routen:               {result.number_of_feasible_routes}")
-    print(f"  Unzulässige Routen:             {result.number_of_infeasible_routes}")
-    print(f"  Insgesamte Violations:          {result.number_of_total_violations}")
+    print(f"  Anzahl der Routen:                                  {result.number_of_routes}")
+    print(f"  Zulässige Routen:                                   {result.number_of_feasible_routes}")
+    print(f"  Unzulässige Routen:                                 {result.number_of_infeasible_routes}")
+    print(f"  Insgesamte Violations:                              {result.number_of_total_violations}")
 
     print("\nGesamt-Statistiken:")
-    print(f"  Gesamt-Fahrtdauer:              {result.total_travel_time:.2f} s")
-    print(f"  Gesamt-Fahrtdistanz:            {result.total_travel_distance:.2f} km")
-    print(f"  Zielfunktionswert:              {result.total_objective_value:.2f}")
+    print(f"  Gesamt-Fahrtdauer:                                  {result.total_travel_time:.2f} s")
+    print(f"  Gesamt-Fahrtdistanz:                                {result.total_travel_distance:.2f} km")
+    print(f"  Zielfunktionswert:                                  {result.total_objective_value:.2f}")
 
     print("\nStatistiken pro Anfrage:")
-    print(f"  Zielfunktionswert pro Anfrage:  {result.objective_value_per_served_request:.2f} s")
-    print(f"  Fahrtdistanz pro Anfrage:       {result.total_objective_value:.2f}")
-    print(f"  Fahrtzeit pro Anfrage:          {result.travel_distance_per_served_request:.2f} km")
+    print(f"  Zielfunktionswert pro bedienter Anfrage:            {result.objective_value_per_served_request:.2f} s")
+    print(f"  Fahrtzeit pro bedienter Anfrage:                    {result.travel_time_per_served_request:.2f}")
+    print(f"  Fahrtdistanz  pro bedienter Anfrage:                {result.travel_distance_per_served_request:.2f} km")
+
+    print("\nRoh-Anteile der Optimierungsziele:")
+    print(f"  Gesamt-Fahrtdauer:                                  {result.raw_travel_time_part:.2f} (s)")
+    print(f"  Gesamt-Fahrtkosten:                                 {result.raw_travel_cost_part:.2f} (km)")

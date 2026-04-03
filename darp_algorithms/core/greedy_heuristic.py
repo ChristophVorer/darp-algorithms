@@ -9,7 +9,7 @@ from darp_algorithms.domain.stop import Stop
 
 from .darp_instance import DarpInstance
 from .darp_solution import DarpSolution
-from .route_objective import compute_route_objective_function
+from .route_objective import compute_solution_objective_function
 from .route_state import RouteState
 
 
@@ -35,6 +35,8 @@ def best_insertion_for_request(
             Tupel aus Routenindex und aktualisierter Route.
             Gibt None zurück, wenn keine zulässige Einfügung existiert.
     """
+    darp_config = darp_instance.darp_config
+    objective_config = darp_config.objective_config
     req = darp_instance.requests[request_id]
 
     pickup_stop = Stop(
@@ -52,16 +54,17 @@ def best_insertion_for_request(
 
     best_pickup_route: Optional[Route] = None
     best_pickup_position = -1
-    best_pickup_delta = float("inf")
     best_route_index = -1
-    best_pickup_route_objective_value = 0.0
+    best_pickup_solution_objective_value = float("inf")
 
     best_whole_route: Optional[Route] = None
-    best_whole_delta = float("inf")
+    best_whole_solution_objective_value = float("inf")
 
-    for route_index, route in enumerate(routes):
+    # Berechne die aktuellen RouteStates der Ausgangslösung
+    current_route_states: list[RouteState] = []
+    for route in routes:
         route_state = RouteState(
-            darp_config=darp_instance.darp_config,
+            darp_config=darp_config,
             route=route,
             requests=darp_instance.requests,
             travel_time=darp_instance.travel_time,
@@ -69,9 +72,12 @@ def best_insertion_for_request(
             early_exit_on_violation=use_early_exit,
         )
         route_state.recompute()
-        route_objective_value = compute_route_objective_function(route_state)
+        current_route_states.append(route_state)
 
+    # Phase 1: Ermittle die beste Position für den Abholknoten über alle Routen
+    for route_index, route in enumerate(routes):
         route_length = len(route.stops)
+
         for i in range(route_length + 1):
             pickup_route = Route(
                 vehicle=route.vehicle,
@@ -80,7 +86,7 @@ def best_insertion_for_request(
             pickup_route.stops.insert(i, pickup_stop)
 
             pickup_state = RouteState(
-                darp_config=darp_instance.darp_config,
+                darp_config=darp_config,
                 route=pickup_route,
                 requests=darp_instance.requests,
                 travel_time=darp_instance.travel_time,
@@ -92,22 +98,32 @@ def best_insertion_for_request(
             if not pickup_state.is_feasible():
                 continue
 
-            pickup_objective_value = compute_route_objective_function(pickup_state)
-            pickup_delta = pickup_objective_value - route_objective_value
+            # Bilde die Liste an RouteStates für die Kandidaten-Lösung
+            candidate_route_states = list(current_route_states)
+            candidate_route_states[route_index] = pickup_state
 
-            if pickup_delta < best_pickup_delta:
-                best_pickup_delta = pickup_delta
+            # Berechne den Zielfunktionswert für die Kandidaten-Lösung
+            candidate_solution_objective_value = compute_solution_objective_function(
+                route_states=candidate_route_states,
+                objective_config=objective_config
+            )
+
+            # Wenn die aktuelle Kandidatenlösung einen niedrigeren Zielfunktionswert
+            # als die aktuell beste Pickup-Kandidatenlösung besitzt, überschreibe diese
+            if candidate_solution_objective_value < best_pickup_solution_objective_value:
                 best_pickup_position = i
                 best_pickup_route = pickup_route
-                best_pickup_route_objective_value = pickup_objective_value
+                best_pickup_solution_objective_value = candidate_solution_objective_value
                 best_route_index = route_index
 
     if best_pickup_route is None:
         return None
 
+    # Phase 2: Ermittle die beste Einfügeposition für den Zielknoten der Anfrage
+    # innerhalb derselben Route des Abholknotens
     route_with_pickup = best_pickup_route
-
     route_length = len(route_with_pickup.stops)
+
     for j in range(best_pickup_position + 1, route_length + 1):
         delivery_route = Route(
             vehicle=route_with_pickup.vehicle,
@@ -115,24 +131,31 @@ def best_insertion_for_request(
         )
         delivery_route.stops.insert(j, delivery_stop)
 
-        delivery_route_state = RouteState(
-            darp_config=darp_instance.darp_config,
+        delivery_state = RouteState(
+            darp_config=darp_config,
             route=delivery_route,
             requests=darp_instance.requests,
             travel_time=darp_instance.travel_time,
             travel_distance=darp_instance.travel_distance,
             early_exit_on_violation=use_early_exit,
         )
-        delivery_route_state.recompute()
+        delivery_state.recompute()
 
-        if not delivery_route_state.is_feasible():
+        if not delivery_state.is_feasible():
             continue
 
-        delivery_objective_value = compute_route_objective_function(delivery_route_state)
-        delivery_delta = delivery_objective_value - best_pickup_route_objective_value
+        candidate_route_states = list(current_route_states)
+        candidate_route_states[best_route_index] = delivery_state
 
-        if delivery_delta < best_whole_delta:
-            best_whole_delta = delivery_delta
+        candidate_solution_objective_value = compute_solution_objective_function(
+            route_states=candidate_route_states,
+            objective_config=objective_config
+        )
+
+        # Wenn die aktuelle Kandidatenlösung einen niedrigeren Zielfunktionswert
+        # als die aktuell beste vollständige Kandidatenlösung besitzt, überschreibe diese
+        if candidate_solution_objective_value < best_whole_solution_objective_value:
+            best_whole_solution_objective_value = candidate_solution_objective_value
             best_whole_route = delivery_route
 
     if best_whole_route is None:

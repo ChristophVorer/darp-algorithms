@@ -7,6 +7,8 @@ from dataclasses import dataclass
 class EvaluationResult:
     """
     Klasse zum Kapseln der Evaluationsparameter
+
+    Enthält Metriken über die Durchführung eines Experiments auf genau einem Seed für genau einen Solver.
     """
     # Experiment-Id - Zum Trennen der einzelnen Solver-Durchläufe
     experiment_name: str
@@ -29,6 +31,15 @@ class EvaluationResult:
     number_of_requests_served: int
     number_of_requests_unserved: int
     percentage_of_served_requests: float
+
+    raw_travel_time_part: float
+    raw_travel_cost_part: float
+    raw_capacity_balancing_part: float
+
+    weighted_travel_time_part: float
+    weighted_travel_cost_part: float
+    weighted_capacity_balancing_part: float
+
     total_travel_time: float
     total_travel_distance: float
     total_objective_value: float
