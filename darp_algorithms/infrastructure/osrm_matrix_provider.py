@@ -19,11 +19,16 @@ class OsrmMatrixValidationException(Exception):
     Dies kann beispielsweise bei Koordinaten entstehen für die OSRM keine Fahrprofil-Daten zur Verfügung stellt. Dies
     kann der Fall sein, wenn eine Koordinate sich im Wasser oder in einem Wald befindet.
     """
+
     pass
 
 
 @dataclass(frozen=True)
 class MatrixData:
+    """
+    Struktur, die die Zeit- und Distanzmatrizen umfasst
+    """
+
     time_matrix_seconds: list[list[float]]
     distance_matrix_kilometers: list[list[float]]
 
@@ -51,16 +56,21 @@ class OsrmMatrixProvider:
         :param profile: Das Fahrprofil nach dem sich die berechneten Fahrtzeiten und Distanzen richten.
         :param timeout_seconds: Die Zeit nach der ein Timeout-Error geworfen werden soll.
         """
+
         self.base_url = base_url.rstrip("/")
         self.profile = profile
         self.timeout_seconds = timeout_seconds
 
     def build_matrices(self, locations: list[Location]) -> MatrixData:
-        # Es muss eine Liste von Locations übergeben werden
+        """
+        Baut anhand einer Menge von Locations die entsprechenden Zeit- und Distanzmatrizen und gibt Sie als
+        MatrixData-Objekt zurück.
+        """
+
         if not locations:
             raise ValueError("Die Locations-Liste darf nicht leer sein.")
 
-        # Koordinaten String für die Anfrage an OSRM
+        # Formatierer String für die Anfrage an OSRM, der die Koordinaten der Locations enthält
         coordinates = self._build_coordinate_string(locations)
 
         # Setzt den String für die Anfrage an die OSRM-API zusammen.
@@ -71,7 +81,7 @@ class OsrmMatrixProvider:
             f"?annotations=duration,distance"
         )
 
-        # BOF Senden des Requests + Abfangen von Fehlern bei der Anfrage
+        # Senden des Requests + Abfangen von Fehlern bei der Anfrage
         response = requests.get(url, timeout=self.timeout_seconds)
         response.raise_for_status()
 
@@ -81,7 +91,6 @@ class OsrmMatrixProvider:
             raise RuntimeError(
                 f"OSRM Table Service lieferte keinen erfolgreichen Status: {data}"
             )
-        # EOF Senden des Requests + Abfangen von Fehlern bei der Anfrage
 
         # BOF Validierung der Anfrage-Daten
         duration_matrix = data.get("durations")
@@ -95,12 +104,9 @@ class OsrmMatrixProvider:
 
         self._validate_square_matrix(duration_matrix)
         self._validate_square_matrix(distance_matrix_in_meter)
-        # EOF Validierung der Anfrage-Daten
 
-        """
-        Die OSRM-API liefert eine Distanz-Matrix in Metern. Da in der restlichen Betrachtung Distanzen in Kilometern 
-        betrachtet werden, wird an dieser Stelle von Metern in Kilometern umgerechnet
-        """
+        # Die OSRM-API liefert eine Distanz-Matrix in Metern. Da in der restlichen Betrachtung Distanzen in Kilometern
+        # betrachtet werden, wird an dieser Stelle von Metern in Kilometern umgerechnet
         distance_matrix_in_kilometers = [
             [float(value) / 1000.0 for value in row]
             for row in distance_matrix_in_meter
@@ -115,8 +121,6 @@ class OsrmMatrixProvider:
     def build_travel_time_fn(matrix_data: MatrixData) -> TravelTimeFn:
         """
         Gibt die Time Travel Function für die berechnete Zeitmatrix zurück
-        :param matrix_data:
-        :return:
         """
 
         def travel_time(a: Location, b: Location) -> timedelta:
@@ -148,9 +152,8 @@ class OsrmMatrixProvider:
         """
         Konstruiert aus einer Liste von Locations den Anfrage-String im OSRM-API-Format
         Quelle: https://project-osrm.org/docs/v5.24.0/api/#
-        :param locations:
-        :return:
         """
+
         # OSRM erwartet longitude,latitude
         return ";".join(f"{loc.lon},{loc.lat}" for loc in locations)
 
@@ -159,10 +162,8 @@ class OsrmMatrixProvider:
         """
         Überprüft, ob die übergebene Matrix quadratisch ist und für jede Position einen Eintrag enthält. Das stellt
         sicher, dass für jede Location-Kombination ein Wert in der jeweiligen Matrix vorhanden ist.
-
-        :param matrix:
-        :return:
         """
+
         for row_index, row in enumerate(matrix):
             if len(row) != len(matrix):
                 raise RuntimeError("OSRM-Matrix ist nicht quadratisch.")

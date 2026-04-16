@@ -8,6 +8,11 @@ from uuid import UUID
 
 @dataclass(frozen=True)
 class DarpSolution:
+    """
+    Definiert eine DARP-Lösung und enthält die zugrundeliegende DARP-Instanz, die konstruierten Routen sowie die
+    bedienten und nicht bedient Anfragen.
+    """
+
     darp_instance: DarpInstance
     routes: list[Route]
     served_requests: list[UUID]

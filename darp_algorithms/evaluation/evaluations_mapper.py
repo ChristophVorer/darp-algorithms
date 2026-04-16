@@ -19,16 +19,7 @@ def build_evaluation_result(
         solution_metrics: SolutionMetrics,
 ) -> EvaluationResult:
     """
-    Mappt die Parameter eines Solver-Durchlaufs auf ein EvaluationResult.
-
-    :param scenario_name:
-    :param experiment_name:
-    :param solver_name:
-    :param random_seed:
-    :param scenario_config:
-    :param darp_config:
-    :param solution_metrics:
-    :return:
+    Mappt die Experiment-Parameter eines Solver-Durchlaufs und die zugehörigen Lösungsmetriken auf ein EvaluationResult.
     """
     return EvaluationResult(
         experiment_name=experiment_name,
@@ -67,13 +58,9 @@ def write_evaluation_result_to_csv_file(
         output_path: str,
 ) -> None:
     """
-    Schreibt das gesamte Evaluation-Result in eine Zeile der /artifacts/evaluation_result.csv.
+    Schreibt eine Liste von EvaluationResults als Ergebnis in den `output_path`.
 
-    Existiert bereits eine Datei wird die Zeile an die bestehende CSV-Datei angehangen
-
-    :param results:
-    :param output_path:
-    :return:
+    Dazu wird jedes EvaluationsResult in eine Zeile innerhalb der Datei des `output_path` konvertiert.
     """
     if not results:
         raise ValueError("Die Result-Liste darf nicht leer sein.")
@@ -83,6 +70,9 @@ def write_evaluation_result_to_csv_file(
 
     file_exists = path.exists()
 
+    # Öffnet den `output_path` als CSV-Datei und schreibt die Ergebnisse in diese Datei.
+    # Existiert bereits eine Datei wird die Zeile an die bestehende CSV-Datei angehangen, ansonsten wird eine
+    # entsprechende Datei erstellt
     with path.open("a", newline="", encoding="utf-8") as csv_file:
         writer = csv.DictWriter(csv_file, fieldnames=list(asdict(results[0]).keys()))
 
@@ -96,9 +86,6 @@ def write_evaluation_result_to_csv_file(
 def print_evaluation_result(result: EvaluationResult) -> None:
     """
     Gibt ausgewählte Metriken des Evaluation-Result zur Laufzeit in der Konsole aus.
-
-    :param result:
-    :return:
     """
     print("\n=== Evaluation Result ===")
     print(f"Experiment-Name:                                      {result.experiment_name}")
@@ -109,27 +96,28 @@ def print_evaluation_result(result: EvaluationResult) -> None:
     print(f"Fahrzeuge:                                            {result.number_of_vehicles}")
     print(f"Fahrzeug-Kapazität:                                   {result.vehicle_capacity}")
 
-    print("\nService:")
+    print("\nService-Statistiken:")
     print(f"  Bediente Anfragen:                                  {result.number_of_requests_served}")
     print(f"  Nicht bediente Anfragen:                            {result.number_of_requests_unserved}")
     print(f"  Bediente Anfragen (in Prozent):                     {result.percentage_of_served_requests:.2f}%")
 
-    print("\nRouten:")
+    print("\nRouten-Statistiken:")
     print(f"  Anzahl der Routen:                                  {result.number_of_routes}")
     print(f"  Zulässige Routen:                                   {result.number_of_feasible_routes}")
     print(f"  Unzulässige Routen:                                 {result.number_of_infeasible_routes}")
     print(f"  Insgesamte Violations:                              {result.number_of_total_violations}")
-
-    print("\nGesamt-Statistiken:")
     print(f"  Gesamt-Fahrtdauer:                                  {result.total_travel_time:.2f} s")
     print(f"  Gesamt-Fahrtdistanz:                                {result.total_travel_distance:.2f} km")
+
+    print("\nZielfunktion-Statistiken:")
     print(f"  Zielfunktionswert:                                  {result.total_objective_value:.2f}")
 
-    print("\nStatistiken pro Anfrage:")
+    print("\nStatistiken pro bedienter Anfrage:")
     print(f"  Zielfunktionswert pro bedienter Anfrage:            {result.objective_value_per_served_request:.2f} s")
     print(f"  Fahrtzeit pro bedienter Anfrage:                    {result.travel_time_per_served_request:.2f}")
-    print(f"  Fahrtdistanz  pro bedienter Anfrage:                {result.travel_distance_per_served_request:.2f} km")
+    print(f"  Fahrtdistanz pro bedienter Anfrage:                 {result.travel_distance_per_served_request:.2f} km")
 
-    print("\nRoh-Anteile der Optimierungsziele:")
-    print(f"  Gesamt-Fahrtdauer:                                  {result.raw_travel_time_part:.2f} (s)")
-    print(f"  Gesamt-Fahrtkosten:                                 {result.raw_travel_cost_part:.2f} (km)")
+    print("\nGewichtete Anteile der Optimierungsziele:")
+    print(f"  Fahrtdauer:                                         {result.weighted_travel_time_part:.2f} (s)")
+    print(f"  Fahrtkosten:                                        {result.weighted_travel_cost_part:.2f} ")
+    print(f"  Fahrzeugauslastung:                                 {result.weighted_capacity_balancing_part:.2f} ")

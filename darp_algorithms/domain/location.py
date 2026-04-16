@@ -8,8 +8,11 @@ from uuid import UUID, uuid4
 @dataclass(frozen=True, slots=True)
 class Location:
     """
-    Koordinaten-Informationen eines Ortes für die OSRM-API Konvertierung
+    Domain-Klasse zur Repräsentation eines Ortes.
+
+    Enthält die entsprechenden Koordinaten-Informationen eines Ortes für die OSRM-API Konvertierung
     """
+
     lat: float
     lon: float
     matrix_node_id: Optional[int] = None

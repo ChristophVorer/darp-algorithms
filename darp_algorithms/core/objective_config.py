@@ -5,28 +5,29 @@ from dataclasses import dataclass
 class ObjectiveConfig:
     """
     Definiert die Konfigurationsmöglichkeiten für die Zielfunktion und deren Optimierungsziele
-
     """
+
     # ==================================================================================================================
-    #    Modellparameter
-    #
-    # Faktor, der angibt wie hoch die Kosten pro Kilometer für ein Fahrzeug ist.
-    # Der Faktor basiert auf realistischen Kostenannahmen für Nutzfahrzeuge, die vom ADACs veröffentlicht wurden.
-    # (https://assets.adac.de/Autodatenbank/Autokosten/autokostenuebersicht.pdf)
+    #    Modellparameter:
     # ==================================================================================================================
+
+    # 'cost_per_kilometer' beschreibt hier den Faktor, der angibt wie hoch die Kosten pro Kilometer für ein Fahrzeug
+    # ist. Der Faktor basiert auf realistischen Kostenannahmen für Nutzfahrzeuge, die vom ADACs veröffentlicht
+    # wurden. (siehe https://assets.adac.de/Autodatenbank/Autokosten/autokostenuebersicht.pdf)
     cost_per_kilometer: float = 0.8
 
     # ==================================================================================================================
-    #    Optimierungszielsteuerung
+    #    Optimierungszielsteuerung:
+    #    Hier können die einzelnen zu betrachteten Optimierungsziele de- bzw. aktiviert werden.
     # ==================================================================================================================
 
-    # Optimierungsziel der Gesamt-Fahrtzeit
+    # Optimierungsziel - Gesamt-Fahrtzeit
     use_total_travel_time: bool = True
 
-    # Optimierungsziel der Gesamt-Fahrtkosten
+    # Optimierungsziel - Gesamt-Fahrtkosten
     use_travel_cost: bool = True
 
-    # Optimierungsziel der Balancierung der Fahrzeugauslastungen (Imbalance)
+    # Optimierungsziel - Balancierung der Fahrzeugauslastungen (Imbalance)
     use_capacity_balancing: bool = True
 
     # ==================================================================================================================
@@ -38,11 +39,11 @@ class ObjectiveConfig:
     #    Anteile der Optimierungsziele am Zielfunktionswert ungefähr in der gleichen Größenordnung liegen.
     # ==================================================================================================================
 
-    # Gewichtungsparameter der Gesamt-Fahrtzeit
+    # Gewichtungsparameter - Gesamt-Fahrtzeit
     travel_time_weight: float = 1.0
 
-    # Gewichtungsparameter der Gesamt-Fahrtkosten
+    # Gewichtungsparameter - Gesamt-Fahrtkosten
     travel_cost_weight: float = 110
 
-    # Gewichtungsparameter der Balancierung der Fahrzeugauslastungen (Imbalance)
+    # Gewichtungsparameter - Balancierung der Fahrzeugauslastungen (Imbalance)
     capacity_balancing_weight: float = 550000.0

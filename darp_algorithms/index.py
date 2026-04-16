@@ -30,8 +30,6 @@ def build_darp_config_basic() -> DarpConfig:
     - Weite Zeitfenster an den Abholknoten
     - Fahrzeug-Kapazitäten nicht bindend
     - Zwei Optimierungsziele: Minimierung der Gesamt-Fahrtzeit und der Gesamt-Fahrtkosten
-
-    :return:
     """
 
     return DarpConfig(
@@ -62,8 +60,6 @@ def build_darp_config_time_restrictive() -> DarpConfig:
     - Keine Fahrtzeit-Beschränkung
     - Fahrzeug-Kapazitäten weiterhin nicht bindend
     - Zwei Optimierungsziele: Minimierung der Gesamt-Fahrtzeit und der Gesamt-Fahrtkosten
-
-    :return:
     """
 
     return DarpConfig(
@@ -96,8 +92,6 @@ def build_darp_config_resource_restrictive() -> DarpConfig:
     - Fahrzeug-Kapazitäten werden bindend
     - Drei Optimierungsziele: Minimierung der Gesamt-Fahrtzeit, der Gesamt-Fahrtkosten und der Balancierung der
     Fahrzeugauslastung
-
-    :return:
     """
 
     return DarpConfig(
@@ -128,9 +122,6 @@ def build_scenario_config_basic(*, random_seed: int) -> ScenarioConfig:
 
     - Geringe Instanzgröße => wenige Fahrzeuge und Anfragen
     - Großzügiges Verhältnis von Anfragen und Service-Zeitraum
-
-    :param random_seed:
-    :return:
     """
 
     return ScenarioConfig(
@@ -152,9 +143,6 @@ def build_scenario_config_time_restrictive(*, random_seed: int) -> ScenarioConfi
 
     - Weiterhin besteht eine geringe Instanzgröße, dementsprechend werden wenige Fahrzeuge und Anfragen generiert
     - Aber das Verhältnis von Anzahl der Anfragen zum Service-Zeitraum wird ungünstiger
-
-    :param random_seed:
-    :return:
     """
 
     return ScenarioConfig(
@@ -176,9 +164,6 @@ def build_scenario_config_resource_restrictive(*, random_seed: int) -> ScenarioC
 
     - Weiterhin besteht eine geringe Instanzgröße, dementsprechend werden wenige Fahrzeuge und Anfragen generiert
     - Die Passagieranzahl pro Anfrage liegt nun zwischen 2 und 3 statt standardmäßig zwischen 1 und 3.
-
-    :param random_seed:
-    :return:
     """
 
     return ScenarioConfig(
@@ -201,21 +186,9 @@ def build_scenario_config_resource_restrictive(*, random_seed: int) -> ScenarioC
 #
 # ========================================
 SCENARIOS = {
-    "1": {
-        "name": "basic",
-        "scenario_config": build_scenario_config_basic,
-        "darp_config": build_darp_config_basic,
-    },
-    "2": {
-        "name": "time_restrictive",
-        "scenario_config": build_scenario_config_time_restrictive,
-        "darp_config": build_darp_config_time_restrictive,
-    },
-    "3": {
-        "name": "resource_restrictive",
-        "scenario_config": build_scenario_config_resource_restrictive,
-        "darp_config": build_darp_config_resource_restrictive,
-    },
+    "1": {"name": "basic"},
+    "2": {"name": "time_restrictive"},
+    "3": {"name": "resource_restrictive"},
 }
 
 
@@ -229,18 +202,13 @@ def build_reproducible_instance(
     """
     Baut für ein Szenario die entsprechende ScenarioConfig, DarpConfig und eine reproduzierbare DarpInstance.
 
-    Die ScenarioConfig und DarpConfig wird aus dem SCENARIOS-Mapping gezogen.
+    Die ScenarioConfig und DarpConfig werden aus dem SCENARIOS-Mapping gezogen.
 
     Die DarpInstance wird durch den RequestGenerator und den VehicleGenerator instanziiert. Für manche Orte kann OSRM
     aber keine Fahrtdistanzen oder Fahrtdauern berechnen. Wenn dies der Fall ist, wird versucht eine neue Instanz
     basierend auf dem alten Seed addiert mit einem Offset zu generieren.
-
-    :param scenario_name:
-    :param base_seed:
-    :param max_attempts:
-    :param retry_offset:
-    :return:
     """
+
     for attempt in range(max_attempts):
         current_seed = base_seed + attempt * retry_offset
 
@@ -271,12 +239,12 @@ def build_reproducible_instance(
             ))
             return scenario_config, darp_config, darp_instance
 
-        # Tritt ein Fehler bei der Validierung der Matritzen auf, soll ein weiterer Versuch gestartet werden
+        # Tritt ein Fehler bei der Validierung der Matrizen auf, soll ein weiterer Versuch gestartet werden.
         # Der entsprechende Fehler wird also nur abgefangen und in der Konsole ausgegeben.
         except OsrmMatrixValidationException as exception:
             print(exception)
 
-    # Konnte keine Instanz generiert werden, wird soll ein Fehler ausgegeben werden
+    # Konnte keine Instanz generiert werden, soll ein Fehler ausgegeben werden
     raise RuntimeError(
         f"Es konnte nach {max_attempts} Versuchen keine routbare Instanz "
         f"für Szenario '{scenario_name}' und Basis-Seed {base_seed} erzeugt werden."
@@ -289,13 +257,10 @@ def run_single_experiment(
         scenario_name: str
 ) -> list:
     """
-    Führt ein Experiment-Durchlauf für alle Solver auf derselben DarpInstance durch und speichert die Ergebnisse in der
-    /artifacts/evaluation_results.csv
-
-    :param random_seed:
-    :param scenario_name:
-    :return:
+    Führt ein Experiment-Durchlauf für alle Solver auf derselben DarpInstance durch und speichert die Ergebnisse in
+    einer Liste von EvaluationsResults
     """
+
     scenario_config, darp_config, darp_instance = build_reproducible_instance(
         scenario_name=scenario_name,
         base_seed=random_seed,
@@ -309,6 +274,17 @@ def run_single_experiment(
 
     results = []
 
+    # ==================================================================================================================
+    #    Durchführung der Experimente
+    #
+    #   Ablauf pro Lösungsverfahren:
+    #
+    #   1. Anwenden des Lösungsverfahrens
+    #   2. Berechnen der Lösungsmetriken
+    #   3. Speichern der Evaluationsergebnisse für den Solver
+    # ==================================================================================================================
+
+    # Lösungsverfahren - Baseline-Greedy
     baseline_solution = greedy_construction_routes(
         darp_instance=darp_instance,
     )
@@ -326,6 +302,7 @@ def run_single_experiment(
     )
     results.append(baseline_result)
 
+    # Lösungsverfahren - Greedy-Refined
     refined_solution = greedy_construction_routes_time_restrictive_scenario(
         darp_instance=darp_instance,
     )
@@ -343,6 +320,7 @@ def run_single_experiment(
     )
     results.append(refined_result)
 
+    # Lösungsverfahren - Local-Search
     local_search_solution = local_search_improvement(
         darp_solution=refined_solution
     )
@@ -366,16 +344,21 @@ def run_single_experiment(
 
 def main() -> None:
     """
-    Erstellen eines Experiment-Settings per Konsolen Eingabe und anschließende Ausführung des Experiments.
+    Ausführung der Experiment-Pipeline
 
-    Auswahl-Möglichkeiten:
+    Ablauf:
+
+    1. Erstellen eines Experiment-Settings per Konsolen Eingabe
+    2. Ausführung der Experimente und Aggregierung der Ergebnisse
+    3. Speichern der Ergebnisse in `/artifacts/evaluation_results.csv`
+
+    Auswahl-Möglichkeiten für das Experiment-Setting:
 
     1. Szenario
     2. Anzahl der Seeds (Experiment-Durchläufe)
     3. Start-Seed (Danach in aufsteigender Reihenfolge abhängig von der Anzahl der Seeds
-
-    :return:
     """
+
     print("Wähle ein Szenario:")
     print("1 - basic")
     print("2 - time_restrictive")
@@ -399,6 +382,7 @@ def main() -> None:
     all_results = []
 
     for seed in seeds:
+        # Durchführung des Experiment-Durchlaufs
         experiment_results = run_single_experiment(
             random_seed=seed,
             scenario_name=scenario["name"]
@@ -406,9 +390,11 @@ def main() -> None:
 
         all_results.extend(experiment_results)
 
+        # Ausgabe der Ergebnisse des Experiment-Durchlaufs in der Konsole
         for result in experiment_results:
             print_evaluation_result(result)
 
+    # Speichern der Ergebnisse aller Experiment-Durchläufe in
     write_evaluation_result_to_csv_file(
         results=all_results,
         output_path="artifacts/evaluation_results.csv",

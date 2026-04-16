@@ -9,8 +9,11 @@ from uuid import UUID, uuid4
 @dataclass(frozen=True, slots=True)
 class Vehicle:
     """
-    Ein Fahrzeug, welches für die Bearbeitung von Anfragen zustaendig ist.
+    Domain-Klasse zur Repräsentation eines Stopps.
+
+    Enthält die Informationen über die Startposition sowie den Startzeitpunkt des Fahrzeugs.
     """
+
     start_position: Location
     start_time: datetime
     id: UUID = field(default_factory=uuid4)

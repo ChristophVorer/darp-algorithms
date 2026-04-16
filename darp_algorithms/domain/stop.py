@@ -7,12 +7,16 @@ from datetime import datetime
 from typing import Optional
 from uuid import UUID
 
+
 @dataclass(frozen=True, slots=True)
 class Stop:
     """
-    Ein Stopp assoziiert mit einer Route eines Fahrzeugs, einer entsprechenden Anfrage und der Art des Stopps (Abholung/Absetzung).
+    Domain-Klasse zur Repräsentation eines Stopps.
+
+    Enthält die Informationen über die Art des Stopps (Abholung/Absetzung), die zugehörige Anfrage sowie den Ort des
+    Stopps
     """
+
     kind: StopKind
     request_id: UUID
     location: Location
-    planned_time: Optional[datetime] = None

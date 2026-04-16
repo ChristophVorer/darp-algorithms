@@ -12,12 +12,10 @@ def _remove_request_from_routes(*, routes: list[Route], request_id: UUID) -> lis
     """
     Entfernt eine übergebene Anfrage aus der ihr zugeteilten Route.
 
-    Dazu wird zunächst die Route der Anfrage aus einer Liste von Routen identifziert und dann sowohl der Abhol- als auch
+    Dazu wird zunächst die Route der Anfrage aus einer Liste von Routen identifiziert und dann sowohl der Abhol- als auch
     der Zielknoten entfernt.
-    :param routes:
-    :param request_id:
-    :return:
     """
+
     new_routes: list[Route] = []
 
     # Filterung die übergebenen Routen
@@ -45,24 +43,21 @@ def _insert_request_into_routes(
         request_id: UUID,
 ) -> list[Route] | None:
     """
-    Fügt eine Anfrage in eine Liste von Routen ein.
+    Ermittelt mithilfe der Funktion `best_insertion_for_request()` die besten zulässigen Einfügepositionen für den
+    Abhol- und Zielknoten einer Anfrage innerhalb einer übergebenen Routenstruktur und aktualisiert die Routenstruktur
+    entsprechend.
 
     Es werden dazu alle möglichen Einfügepositionen für die Anfrage in der Menge der Routen betrachtet. Dabei wird das
-    Positionspaar, welches den Zielfunktionswert der Lösung minimiert ausgewählt.
-    :param routes:
-    :param darp_solution:
-    :param request_id:
-    :return:
+    Positionspaar, welches zu einer zulässigen Lösung führt und den Zielfunktionswert der Lösung minimiert ausgewählt.
     """
 
-    # Kopiere die Routen der Lösung
     new_routes = [
         Route(vehicle=route.vehicle, stops=list(route.stops))
         for route in routes
     ]
 
-    # Hier wird für die Bestimmung des Positionspaares die Funktion best_insertion_for_request() verwendet, die auch
-    # für die sequenzielle Einfügung der Anfragen bei den Greedy-Heuristiken verantwortlich ist.
+    # Bestimmung des Positionspaares mithilfe der Funktion `best_insertion_for_request()`, die auch für die sequenzielle
+    # Einfügung der Anfragen bei den Greedy-Heuristiken verantwortlich ist.
     best_insertion = best_insertion_for_request(
         routes=new_routes,
         request_id=request_id,
@@ -86,12 +81,11 @@ def relocate_request(*, darp_solution: DarpSolution, request_id: UUID) -> DarpSo
     Die Funktion definiert einen Relocate-Operator für das Local-Search-Verfahren.
 
     Zunächst entfernt der Relocate-Operator eine Anfrage aus einer übergebenen Lösung mithilfe von
-    _remove_request_from_routes(). Im Anschluss fügt der Relocate-Operator diese Anfrage mithilfe von
-    _insert_request_into_routes wieder in Lösung ein.
-    :param darp_solution:
-    :param request_id:
-    :return:
+    `_remove_request_from_routes()`.
+
+    Im Anschluss fügt der Relocate-Operator die Anfrage mithilfe von `_insert_request_into_routes` wieder in Lösung ein.
     """
+
     darp_instance = darp_solution.darp_instance
 
     # Entfernen der Anfrage aus der Lösung
@@ -108,10 +102,6 @@ def relocate_request(*, darp_solution: DarpSolution, request_id: UUID) -> DarpSo
     )
 
     # Wenn keine zulässige Lösung gefunden werden konnte, wird None zurückgegeben.
-    # Dieser Fall kann aber in der Praxis eigentlich nicht eintreten, da aus einer zulässigen Lösung zuvor eine Anfrage
-    # entfernt wurde. Es muss also zumindest ein zulässiges Positionspaar für die Einfügung derselben Anfrage
-    # existieren, nämlich genau die Positionen für Abhol- und Zielknoten der Anfrage vor Entfernung durch
-    # _remove_request_from_routes()
     if relocate_routes is None:
         return None
 
@@ -130,8 +120,19 @@ def exchange_requests(
         request_id_1: UUID,
         request_id_2: UUID,
 ) -> DarpSolution | None:
+    """
+    Die Funktion definiert einen Exchange-Operator für das Local-Search-Verfahren.
+
+    Zunächst entfernt der Exchange-Operator zwei Anfragen aus einer übergebenen Lösung mithilfe von
+    `_remove_request_from_routes()`.
+
+    Im Anschluss fügt der Relocate-Operator die beiden Anfragen sequenziell mithilfe von `_insert_request_into_routes`
+    wieder in Lösung ein.
+    """
+
     darp_instance = darp_solution.darp_instance
 
+    # Entfernen der beiden Anfragen
     exchange_routes = _remove_request_from_routes(
         routes=darp_solution.routes,
         request_id=request_id_1,
@@ -142,6 +143,7 @@ def exchange_requests(
         request_id=request_id_2,
     )
 
+    # Ermittlung der besten Einfügeposition der ersten Anfrage
     exchange_routes = _insert_request_into_routes(
         routes=exchange_routes,
         darp_solution=darp_solution,
@@ -149,24 +151,17 @@ def exchange_requests(
     )
 
     # Wenn keine zulässige Lösung gefunden werden konnte, wird None zurückgegeben.
-    # Dieser Fall kann an dieser Stelle in der Praxis eigentlich nicht eintreten, da aus einer zulässigen Lösung zuvor
-    # zwei Anfragen entfernt wurden. Es muss also zumindest ein zulässiges Positionspaar für die Einfügung existieren,
-    # nämlich genau die Positionen für Abhol- und Zielknoten der Anfrage vor Entfernung durch
-    # _remove_request_from_routes()
     if exchange_routes is None:
         return None
 
+    # Ermittlung der besten Einfügeposition der zweiten Anfrage
     exchange_routes = _insert_request_into_routes(
         routes=exchange_routes,
         darp_solution=darp_solution,
         request_id=request_id_2,
     )
 
-    # Durch die sequenzielle Wiedereinfügung der Anfragen, kann bei der Ermittlung der besten Einfügeposition für die
-    # zweite Anfrage eventuell None zurückgegeben werden. Denn abhängig davon, wie die erste Anfrage erneut der Lösung
-    # hinzugefügt wurde, existiert potenziell keine valides Positionspaar mehr zur Wiedereinfügung der zweiten Anfrage.
-    # Daher kann _insert_request_into_routes() auch None zurückgeben. In diesem Fall gibt auch exchange_requests()
-    # insgesamt None zurück.
+    # Wenn keine zulässige Lösung gefunden werden konnte, wird None zurückgegeben.
     if exchange_routes is None:
         return None
 
@@ -179,6 +174,18 @@ def exchange_requests(
 
 
 def local_search_improvement(*, darp_solution: DarpSolution) -> DarpSolution:
+    """
+    Local-Search-Verfahren mit den zwei oben definierten Nachbarschaftsoperatoren Relocate und Exchange.
+
+    Das Local-Search-Verfahren sucht durch fortlaufende Anwendung der Operatoren nach verbessernden in der Nachbarschaft
+    der Ausgangslösung. Kann keine verbessernde Lösung (mehr) gefunden werden, wird die aktuell beste Lösung
+    zurückgegeben.
+
+    Hinweis:
+    Als beste Lösung wird zunächst die Ausgangslösung definiert. Dies sorgt dafür, dass nur verbessernde Lösungen
+    angenommen werden und immer eine DARP-Lösung zurückgegeben wird.
+    """
+
     best_solution = DarpSolution(
         darp_instance=darp_solution.darp_instance,
         routes=list(darp_solution.routes),
@@ -191,6 +198,9 @@ def local_search_improvement(*, darp_solution: DarpSolution) -> DarpSolution:
     while True:
         improvement: bool = False
         requests = list(best_solution.served_requests)
+
+        # Wende auf jede Anfrage den Relocate-Operator an und suche nach einer verbessernden Lösung. Es wird die erste
+        # verbessernde Lösung innerhalb der Relocate-Nachbarschaft gewählt.
         for request_id in requests:
             candidate_solution = relocate_request(
                 darp_solution=best_solution,
@@ -208,9 +218,13 @@ def local_search_improvement(*, darp_solution: DarpSolution) -> DarpSolution:
                 improvement = True
                 break
 
+        # Konnte eine verbessernde Lösung durch den Relocate-Operator gefunden werden, beginnt das
+        # Local-Search-Verfahren erneut
         if improvement:
             continue
 
+        # Wende auf jedes Anfragepaar den Exchange-Operator an und suche nach einer verbessernden Lösung. Es wird die
+        # erste verbessernde Lösung innerhalb der Exchange-Nachbarschaft gewählt.
         for i in range(len(requests)):
             for j in range(i + 1, len(requests)):
                 request_id_1 = requests[i]

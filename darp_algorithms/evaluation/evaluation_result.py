@@ -6,14 +6,15 @@ from dataclasses import dataclass
 @dataclass(frozen=True)
 class EvaluationResult:
     """
-    Klasse zum Kapseln der Evaluationsparameter
+    Klasse zum Kapseln der Evaluationsparameter.
 
     Enthält Metriken über die Durchführung eines Experiments auf genau einem Seed für genau einen Solver.
     """
-    # Experiment-Id - Zum Trennen der einzelnen Solver-Durchläufe
+
+    # Experiment-Id - Zur Trennung der einzelnen Solver-Durchläufe
     experiment_name: str
 
-    # Szenario-Name - "basic", "time-restrictive" und "res-n-rt-restrictive"
+    # Szenario-Name - "basic", "time-restrictive" und "ressource-restrictive"
     scenario_name: str
 
     # Solver-Name
@@ -25,7 +26,7 @@ class EvaluationResult:
     number_of_vehicles: int
     vehicle_capacity: int
 
-    # Solution-Attribute
+    # Lösungs-Attribute
     number_of_routes: int
     number_of_requests_total: int
     number_of_requests_served: int

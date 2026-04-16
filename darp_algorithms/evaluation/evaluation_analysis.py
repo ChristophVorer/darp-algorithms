@@ -33,6 +33,9 @@ COMPONENT_COLORS = {
 
 
 def create_output_directories() -> tuple[Path, Path]:
+    """
+    Erstellt die Output-Paths für die Zusammenfassungstabellen
+    """
     output_summary_dir = Path("artifacts/summary_tables")
     output_summary_dir.mkdir(parents=True, exist_ok=True)
 
@@ -43,6 +46,9 @@ def create_output_directories() -> tuple[Path, Path]:
 
 
 def aggregate_scenario_results(scenario_dataframe: pd.DataFrame) -> pd.DataFrame:
+    """
+    Aggregiert die Evaluationsmetriken innerhalb des DataFrame-Objekts und gibt es zurück.
+    """
     aggregated = (
         scenario_dataframe
         .groupby("solver_name", as_index=False)
@@ -80,6 +86,10 @@ def aggregate_scenario_results(scenario_dataframe: pd.DataFrame) -> pd.DataFrame
 
 
 def format_mean_std(mean_value: float, std_value: float, decimals: int = 2) -> str:
+    """
+    Formatiert den Mittelwert sowie die Standardabweichung als String
+    """
+
     return f"{{{mean_value:.{decimals}f} (+- {std_value:.{decimals}f})}}"
 
 
@@ -89,6 +99,10 @@ def format_absolute_and_percentage(
         decimals_value: int = 2,
         decimals_pct: int = 1,
 ) -> str:
+    """
+    Berechnet den relativen Anteil eines Werts am übergebenen Gesamtwert und formatiert diese Werte als String.
+    """
+
     if pd.isna(total) or total == 0:
         percentage = 0.0
     else:
@@ -98,6 +112,10 @@ def format_absolute_and_percentage(
 
 
 def map_solver_names(dataframe: pd.DataFrame) -> pd.DataFrame:
+    """
+    Mappt die technischen Namen der Solver auf sprechende Namen aus dem `SOLVER_MAPPING_TABLE`
+    """
+
     df = dataframe.copy()
     df["solver_name"] = df["solver_name"].astype(str).map(
         lambda x: SOLVER_MAPPING_TABLE.get(x, x)
@@ -111,6 +129,10 @@ def compute_component_percentages(
         capacity: float,
         include_capacity: bool,
 ) -> tuple[float, float, float]:
+    """
+    Berechnet die relativen Anteile der Zielfunktionskomponenten am Gesamtzielfunktionswert
+    """
+
     if include_capacity:
         total = travel_time + travel_cost + capacity
         if total == 0:
@@ -133,6 +155,12 @@ def compute_component_percentages(
 
 
 def build_main_metrics_table(aggregated_result: pd.DataFrame) -> pd.DataFrame:
+    """
+    Baut das Dataframe für die Hauptmetriken des Experiments zusammen.
+
+    Die Hauptmetriken bestehen aus der Service-Rate sowie dem Zielfunktionswert pro bedienter Anfrage
+    """
+
     df = map_solver_names(aggregated_result)
 
     return pd.DataFrame({
@@ -149,6 +177,12 @@ def build_main_metrics_table(aggregated_result: pd.DataFrame) -> pd.DataFrame:
 
 
 def build_efficiency_table(aggregated_result: pd.DataFrame) -> pd.DataFrame:
+    """
+    Baut das Dataframe für die Effizienzmetriken des Experiments zusammen.
+
+    Die Effizienzmetriken bestehen aus der Fahrtzeit und Fahrtdistanz pro Anfrage
+    """
+
     df = map_solver_names(aggregated_result)
 
     return pd.DataFrame({
@@ -165,6 +199,14 @@ def build_efficiency_table(aggregated_result: pd.DataFrame) -> pd.DataFrame:
 
 
 def build_combined_objective_breakdown_table(data_frame: pd.DataFrame) -> pd.DataFrame:
+    """
+    Baut für die unterschiedlichen Szenarien und Ergebnisse aus dem Experiment ein Dataframe, welches die
+    Zusammensetzung der Zielfunktion wiedergibt.
+
+    Dazu werden die absoluten Werte der gewichteten Zielfunktionskomponenten sowie deren relativer Anteil am
+    Gesamtzielfunktionswert bestimmt und in das Dataframe integriert.
+    """
+
     rows = []
 
     for scenario in DESIRED_SCENARIO_ORDER:
@@ -203,10 +245,14 @@ def build_combined_objective_breakdown_table(data_frame: pd.DataFrame) -> pd.Dat
     return pd.DataFrame(rows)
 
 
-def save_combined_objective_breakdown_table(
+def save_combined_objective_breakdown_table_as_csv(
         data_frame: pd.DataFrame,
         output_summary_dir: Path,
 ) -> None:
+    """
+    Speichere die Tabelle für die Zusammensetzung der Zielfunktion als CSV-Datei
+    """
+
     combined_objective_table = build_combined_objective_breakdown_table(data_frame)
     output_path = output_summary_dir / "combined_objective_breakdown.csv"
     combined_objective_table.to_csv(output_path, index=False)
@@ -221,6 +267,10 @@ def save_combined_objective_breakdown_as_latex(
         data_frame: pd.DataFrame,
         output_summary_dir: Path,
 ) -> None:
+    """
+    Speichere die Tabelle für die Zusammensetzung der Zielfunktion als Latex-Datei
+    """
+
     combined_table = build_combined_objective_breakdown_table(data_frame)
 
     scenario_order_labels = [
@@ -231,15 +281,16 @@ def save_combined_objective_breakdown_as_latex(
 
     output_path = output_summary_dir / "combined_objective_breakdown_table.tex"
 
-    lines = []
-    lines.append(r"\begin{table}[H]")
-    lines.append(r"\centering")
-    lines.append(r"\caption{Relative Zusammensetzung der Zielfunktion über alle Szenarien und Lösungsverfahren}")
-    lines.append(r"\label{tab:combined_objective_breakdown}")
-    lines.append(r"\begin{tabular}{llll}")
-    lines.append(r"\toprule")
-    lines.append(r"Lösungsverfahren & Fahrtzeit (\%) & Fahrtkosten (\%) & Auslastung (\%) \\")
-    lines.append(r"\midrule")
+    lines = [
+        r"\begin{table}[H]",
+        r"\centering",
+        r"\caption{Relative Zusammensetzung der Zielfunktion über alle Szenarien und Lösungsverfahren}",
+        r"\label{tab:combined_objective_breakdown}",
+        r"\begin{tabular}{llll}",
+        r"\toprule",
+        r"Lösungsverfahren & Fahrtzeit (\%) & Fahrtkosten (\%) & Auslastung (\%) \\",
+        r"\midrule"
+    ]
 
     for scenario_index, scenario_label in enumerate(scenario_order_labels):
         scenario_df = combined_table[combined_table["scenario"] == scenario_label]
@@ -279,6 +330,10 @@ def save_summary_tables_for_scenario(
         output_summary_dir: Path,
         scenario: str,
 ) -> None:
+    """
+    Bildet die Tabellen für die Haupt- und Effizienzmetriken
+    """
+
     rounded_result = aggregated_result.round(2)
 
     main_metrics_table = build_main_metrics_table(rounded_result)
@@ -297,6 +352,11 @@ def save_summary_tables_for_scenario(
 
 
 def generate_summary_tables(data_frame: pd.DataFrame, output_summary_dir: Path) -> None:
+    """
+    Generiert für alle Szenarien die entsprechenden Dataframes und speichert Tabellen für die Haupt- und
+    Effizienzmetriken.
+    """
+
     for scenario in DESIRED_SCENARIO_ORDER:
         scenario_dataframe = data_frame[data_frame["scenario_name"] == scenario]
 
@@ -311,6 +371,10 @@ def collect_boxplot_data(
         scenario_dataframe: pd.DataFrame,
         value_column: str,
 ) -> tuple[list[pd.Series], list[str]]:
+    """
+    Sammelt die Daten einer Evaluationsmetrik für einen Boxplot
+    """
+
     data = []
     labels = []
 
@@ -331,6 +395,10 @@ def create_boxplot(
         output_path: Path,
         y_limits: tuple[float, float] | None = None,
 ) -> None:
+    """
+    Erstellt einen Boxplot anhand der übergebenen Parameter
+    """
+
     figure, axes = plt.subplots(figsize=(10, 6))
 
     axes.boxplot(data)
@@ -347,6 +415,10 @@ def create_boxplot(
 
 
 def generate_boxplots(data_frame: pd.DataFrame, output_plot_dir: Path) -> None:
+    """
+    Generiert pro Szenario die Boxplots für die Service-Rate und dem Zielfunktionswert jedes Solvers
+    """
+
     for scenario in DESIRED_SCENARIO_ORDER:
         scenario_dataframe = data_frame[data_frame["scenario_name"] == scenario]
 
@@ -380,6 +452,10 @@ def generate_boxplots(data_frame: pd.DataFrame, output_plot_dir: Path) -> None:
 
 
 def build_component_plot_data(data_frame: pd.DataFrame) -> pd.DataFrame:
+    """
+    Stellt die Daten für den Plot über die Zusammensetzung des Zielfunktionswerts zusammen
+    """
+
     rows = []
 
     for scenario in DESIRED_SCENARIO_ORDER:
@@ -412,16 +488,20 @@ def build_component_plot_data(data_frame: pd.DataFrame) -> pd.DataFrame:
 
 
 def generate_objective_component_plot(data_frame: pd.DataFrame, output_plot_dir: Path) -> None:
+    """
+    Generiert für das ressourcen-restriktive Szenario das gestapelte Balkendiagramm über Zusammensetzung des
+    Zielfunktionswerts.
+    """
+
     component_plot = build_component_plot_data(data_frame)
 
     if component_plot.empty:
         return
 
-    # 👉 NUR resource_restrictive filtern
     scenario = "resource_restrictive"
-    scenario_df = component_plot[component_plot["scenario_name"] == scenario]
+    scenario_dataframe = component_plot[component_plot["scenario_name"] == scenario]
 
-    if scenario_df.empty:
+    if scenario_dataframe.empty:
         return
 
     figure, axes = plt.subplots(figsize=(8, 6))
@@ -435,17 +515,17 @@ def generate_objective_component_plot(data_frame: pd.DataFrame, output_plot_dir:
     show_capacity_label = True
 
     for i, solver in enumerate(SOLVER_ORDER):
-        solver_df = scenario_df[scenario_df["solver_name"] == solver]
-        if solver_df.empty:
+        solver_dataframe = scenario_dataframe[scenario_dataframe["solver_name"] == solver]
+        if solver_dataframe.empty:
             continue
 
-        row = solver_df.iloc[0]
+        row = solver_dataframe.iloc[0]
 
         travel_time = float(row["avg_weighted_travel_time_part"])
         travel_cost = float(row["avg_weighted_travel_cost_part"])
         capacity = float(row["avg_weighted_capacity_balancing_part"])
 
-        travel_time_pct, travel_cost_pct, capacity_pct = compute_component_percentages(
+        travel_time_percentage, travel_cost_percentage, capacity_percentage = compute_component_percentages(
             travel_time=travel_time,
             travel_cost=travel_cost,
             capacity=capacity,
@@ -454,7 +534,7 @@ def generate_objective_component_plot(data_frame: pd.DataFrame, output_plot_dir:
 
         axes.bar(
             i,
-            travel_time_pct,
+            travel_time_percentage,
             width=bar_width,
             color=COMPONENT_COLORS["travel_time"],
             label="Gewichtete Fahrtzeit" if show_travel_time_label else "",
@@ -463,9 +543,9 @@ def generate_objective_component_plot(data_frame: pd.DataFrame, output_plot_dir:
 
         axes.bar(
             i,
-            travel_cost_pct,
+            travel_cost_percentage,
             width=bar_width,
-            bottom=travel_time_pct,
+            bottom=travel_time_percentage,
             color=COMPONENT_COLORS["travel_cost"],
             label="Gewichtete Fahrtkosten" if show_travel_cost_label else "",
         )
@@ -473,9 +553,9 @@ def generate_objective_component_plot(data_frame: pd.DataFrame, output_plot_dir:
 
         axes.bar(
             i,
-            capacity_pct,
+            capacity_percentage,
             width=bar_width,
-            bottom=travel_time_pct + travel_cost_pct,
+            bottom=travel_time_percentage + travel_cost_percentage,
             color=COMPONENT_COLORS["capacity"],
             label="Gewichtete Auslastung" if show_capacity_label else "",
         )
@@ -503,11 +583,15 @@ def generate_objective_component_plot(data_frame: pd.DataFrame, output_plot_dir:
 
 
 def main() -> None:
+    """
+    Erstellt die gesamten Zusammenfassungstabellen und Plots für die Ergebnisse in `artifacts/evaluation_results.csv`
+    """
+
     data_frame = pd.read_csv("artifacts/evaluation_results.csv")
     output_summary_dir, output_plot_dir = create_output_directories()
 
     generate_summary_tables(data_frame, output_summary_dir)
-    save_combined_objective_breakdown_table(data_frame, output_summary_dir)
+    save_combined_objective_breakdown_table_as_csv(data_frame, output_summary_dir)
     save_combined_objective_breakdown_as_latex(data_frame, output_summary_dir)
     generate_boxplots(data_frame, output_plot_dir)
     generate_objective_component_plot(data_frame, output_plot_dir)
