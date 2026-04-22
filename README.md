@@ -20,7 +20,7 @@ Dial-a-Ride-Problem (DARP).
 ## Inhalt des Projekts
 
 - Modellierung des Dial-a-Ride-Problems
-- Modulares Experiment-System zur Evaluation von Lösungsverfahren
+- Modulares Experiment-System zur Evaluation von Lösungsverfahren des DARPs
 - Generierung synthetischer Szenarien
 - Auswertung anhand ausgewählter Evaluationsmetriken
 
