@@ -21,21 +21,19 @@ class RequestGenerator:
     Standardmäßig wird dabei eine Bounding-Box um Münster herum gebildet (siehe ScenarioConfig)
     """
     scenario_config: ScenarioConfig
-    rng: random.Random = field(init=False)
+    random_generator: random.Random = field(init=False)
 
     def __post_init__(self) -> None:
         """
         Gibt ein Random-Objekt zur Generierung von Zufallswerten zurück.
         Das Random-Objekt wird mit dem Random-Seed aus der ScenarioConfig initialisiert.
-        :return:
         """
-        self.rng = random.Random(self.scenario_config.random_seed)
+        self.random_generator = random.Random(self.scenario_config.random_seed)
 
     def generate_requests(self) -> list[Request]:
         """
         Generiert eine Menge von synthetischen Anfragen gemäß der ScenarioConfig, die an den DemandGenerator übergeben
         wurde.
-        :return:
         """
         if self.scenario_config.number_of_requests < 0:
             raise ValueError("Die Anzahl der Anfragen darf nicht negativ sein.")
@@ -52,13 +50,10 @@ class RequestGenerator:
         """
         Generiert eine einzelne synthetische Anfrage gemäß der ScenarioConfig, die an den DemandGenerator übergeben
         wurde.
-        :return:
         """
         for _ in range(100):
-            """
-            Es wird bis zu 100-mal versucht ein Koordinaten-Paar zu erstellen, dessen Distanz innerhalb der minimalen 
-            und der maximalen Distanz liegt (siehe ScenarioConfig).
-            """
+            # Es wird bis zu 100-mal versucht ein Koordinaten-Paar zu erstellen, dessen Distanz innerhalb der minimalen
+            # und der maximalen Distanz liegt (siehe ScenarioConfig).
             pickup = self._random_location()
             delivery = self._random_location()
 
@@ -72,7 +67,7 @@ class RequestGenerator:
                 return Request(
                     pickup=pickup,
                     delivery=delivery,
-                    passengers=self.rng.randint(
+                    passengers=self.random_generator.randint(
                         self.scenario_config.min_passengers,
                         self.scenario_config.max_passengers,
                     ),
@@ -87,11 +82,11 @@ class RequestGenerator:
         Generiert eine zufällige Location innerhalb der definierten Bounding-Box aus der ScenarioConfig.
 
         uniform() sorgt dafür, dass die Koordinaten-Paare gleichverteilt innerhalb der Bounding-Box generiert werden.
-        :return:
         """
+
         return Location(
-            lat=self.rng.uniform(self.scenario_config.min_lat, self.scenario_config.max_lat),
-            lon=self.rng.uniform(self.scenario_config.min_lon, self.scenario_config.max_lon),
+            lat=self.random_generator.uniform(self.scenario_config.min_lat, self.scenario_config.max_lat),
+            lon=self.random_generator.uniform(self.scenario_config.min_lon, self.scenario_config.max_lon),
             matrix_node_id=None,
             id=uuid4(),
         )
@@ -99,7 +94,6 @@ class RequestGenerator:
     def _random_pickup_time(self) -> datetime:
         """
         Generiert einen zufälligen gewünschten Abholzeitpunkt für die Anfrage gemäß der ScenarioConfig.
-        :return:
         """
 
         # Maximal erlaubter Offset für den gewünschten Abholzeitpunkt nach dem Start des Szenarios
@@ -110,7 +104,8 @@ class RequestGenerator:
             raise ValueError("Die Startzeit des Szenarios muss vor der Endzeit liegen!")
 
         # Zufällig generierter Offset für den gewünschten Abholzeitpunkt nach dem Start des Szenarios
-        offset_seconds = self.rng.randint(0, max_offset_seconds)
+        offset_seconds = self.random_generator.randint(0, max_offset_seconds)
+
         return self.scenario_config.scenario_start_time + timedelta(seconds=offset_seconds)
 
     @staticmethod
@@ -125,7 +120,8 @@ class RequestGenerator:
         Quelle: https://www.movable-type.co.uk/scripts/latlong.html
         (Equirectangular approximation)
         """
-        lat_km = 111.0 * (a.lat - b.lat)
-        mean_lat_rad = math.radians((a.lat + b.lat) / 2.0)
-        lon_km = 111.0 * math.cos(mean_lat_rad) * (a.lon - b.lon)
-        return math.sqrt(lat_km ** 2 + lon_km ** 2)
+        latitude_km = 111.0 * (a.lat - b.lat)
+        mean_latitude_radians = math.radians((a.lat + b.lat) / 2.0)
+        longitude_km = 111.0 * math.cos(mean_latitude_radians) * (a.lon - b.lon)
+
+        return math.sqrt(latitude_km ** 2 + longitude_km ** 2)

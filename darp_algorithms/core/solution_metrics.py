@@ -7,29 +7,40 @@ from .route_state import RouteState
 
 @dataclass(frozen=True)
 class SolutionMetrics:
+    """
+    Definiert alle lösungsbasierten und für die spätere Evaluation relevanten Metriken
+    """
+
+    # Routen-Metriken
     number_of_routes: int
     number_of_requests_total: int
     number_of_requests_served: int
     number_of_requests_unserved: int
     percentage_of_served_requests: float
 
+    # Ungewichtete Zielfunktionsanteile
     raw_travel_time_part: float
     raw_travel_cost_part: float
     raw_capacity_balancing_part: float
 
+    # Gewichtete Zielfunktionsanteile
     weighted_travel_time_part: float
     weighted_travel_cost_part: float
     weighted_capacity_balancing_part: float
 
+    # Fahrtzeit-Metriken
     total_travel_time: float
     travel_time_per_served_request: float
 
+    # Fahrtdistanz-Metriken
     total_travel_distance: float
     travel_distance_per_served_request: float
 
+    # Zielfunktionswert-Metriken
     total_objective_value: float
     objective_value_per_served_request: float
 
+    # Metriken über zulässige und unzulässige Routen
     number_of_feasible_routes: int
     number_of_infeasible_routes: int
     number_of_total_violations: int
@@ -39,6 +50,11 @@ def compute_solution_metrics(
         *,
         darp_solution: DarpSolution
 ) -> SolutionMetrics:
+    """
+    Berechnet aus einer übergebenen DarpSolution die lösungsbasierten und für die spätere Evaluation relevanten
+    Metriken.
+    """
+
     darp_instance = darp_solution.darp_instance
     darp_config = darp_instance.darp_config
     objective_config = darp_config.objective_config
@@ -49,8 +65,8 @@ def compute_solution_metrics(
     num_infeasible_routes = 0
     num_total_violations = 0
 
+    # Berechnung der RouteStates aller in der Lösung enthaltenen Routen
     route_states: list[RouteState] = []
-
     for route in darp_solution.routes:
         route_state = RouteState(
             darp_config=darp_config,
@@ -72,6 +88,7 @@ def compute_solution_metrics(
         else:
             num_infeasible_routes += 1
 
+    # Berechnung des Zielfunktionswerts der übergebenen Lösung
     total_objective_value = compute_solution_objective_function(
         route_states=route_states,
         objective_config=objective_config,

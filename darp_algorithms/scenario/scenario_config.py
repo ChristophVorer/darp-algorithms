@@ -7,7 +7,11 @@ from datetime import datetime
 @dataclass(frozen=True)
 class ScenarioConfig:
     """
-    Konfiguration zur Synthese einer DARP-Instanz.
+    Definiert das zugrundeliegende Szenario, indem das DARP gelöst werden soll.
+
+    Definiert die Experimentparameter wie Random-Seed oder Instanzgröße. Außerdem definiert die Szenario-Konfiguration
+    die Parameter für die Erstellung der Instanzen, etwa die minimale und maximale Anzahl der Passagier oder die
+    Bounding-Box für die Abhol- und Zielort der Anfragen.
     """
 
     # Random-Seed für die randomisierte Generierung der Anfragen
@@ -31,24 +35,17 @@ class ScenarioConfig:
     # Maximale Anzahl der Passagiere pro Anfrage
     max_passengers: int = 3
 
-    """
-    Bounding-Box, die den Wertebereich der Koordinaten der Abhol-und Zielort der Anfragen definiert.
-    
-    Die Standardwerte bilden eine Bounding-Box um Münster ca. 5 km um die Innenstadt herum.
-    """
+    # Bounding-Box, die den Wertebereich der Koordinaten der Abhol- und Zielorte der Anfragen definiert.
+    # Die Standardwerte bilden eine Bounding-Box um Münster ca. 5 km um die Innenstadt herum.
     min_lat: float = 51.9116
     max_lat: float = 52.0016
     min_lon: float = 7.5651
     max_lon: float = 7.7103
 
-    """
-    Koordinaten-Paar, welches den Standort des Depots beschreibt.
-    """
+    # Koordinaten-Paar, welches den Standort des Depots beschreibt.
     depot_location_lat: float = 51.9566
     depot_location_lon: float = 7.6377
 
-    """
-    Die minimale und maximale Luftlinien-Distanz von Abhol- und Zielort innerhalb einer Anfrage
-    """
+    # Die minimale und maximale Luftlinien-Distanz von Abhol- und Zielort innerhalb einer Anfrage
     min_direct_distance_km: float = 1.0
     max_direct_distance_km: float = 5.0

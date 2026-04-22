@@ -13,6 +13,39 @@ from .route_objective import compute_solution_objective_function
 from .route_state import RouteState
 
 
+def compute_routestate_and_route_with_insertion(
+        *,
+        route: Route,
+        insert_position: int,
+        stop: Stop,
+        darp_config,
+        darp_instance,
+        use_early_exit: bool,
+) -> tuple[RouteState, Route]:
+    """
+    Fügt anhand der Parameter den übergebenen Stopp in die gegebene Route ein und berechnet die zugehörigen
+    Routen-Metriken.
+    """
+
+    updated_route = Route(
+        vehicle=route.vehicle,
+        stops=list(route.stops),
+    )
+    updated_route.stops.insert(insert_position, stop)
+
+    route_state = RouteState(
+        darp_config=darp_config,
+        route=updated_route,
+        requests=darp_instance.requests,
+        travel_time=darp_instance.travel_time,
+        travel_distance=darp_instance.travel_distance,
+        early_exit_on_violation=use_early_exit,
+    )
+    route_state.recompute()
+
+    return route_state, updated_route
+
+
 def best_insertion_for_request(
         *,
         routes: list[Route],
@@ -30,26 +63,24 @@ def best_insertion_for_request(
     Beste zulässige Einfügeposition des Delivery-Stopps innerhalb der zuvor
     gewählten Route bestimmen.
 
-    Returns:
-        Optional[tuple[int, Route]]:
-            Tupel aus Routenindex und aktualisierter Route.
-            Gibt None zurück, wenn keine zulässige Einfügung existiert.
+
+    Gibt, sofern eine zulässige Lösung gefunden wurde, das Tupel aus dem Routenindex und aktualisierter Route aus, die
+    zuvor als beste Einfügeposition bestimmt wurde. Andernfalls wird None zurückgegeben.
     """
+
     darp_config = darp_instance.darp_config
     objective_config = darp_config.objective_config
-    req = darp_instance.requests[request_id]
+    request = darp_instance.requests[request_id]
 
     pickup_stop = Stop(
         kind=StopKind.PICKUP,
         request_id=request_id,
-        location=req.pickup,
-        planned_time=None,
+        location=request.pickup
     )
     delivery_stop = Stop(
         kind=StopKind.DELIVERY,
         request_id=request_id,
-        location=req.delivery,
-        planned_time=None,
+        location=request.delivery
     )
 
     best_pickup_route: Optional[Route] = None
@@ -78,23 +109,17 @@ def best_insertion_for_request(
     for route_index, route in enumerate(routes):
         route_length = len(route.stops)
 
-        for i in range(route_length + 1):
-            pickup_route = Route(
-                vehicle=route.vehicle,
-                stops=list(route.stops),
-            )
-            pickup_route.stops.insert(i, pickup_stop)
-
-            pickup_state = RouteState(
+        for insert_position in range(route_length + 1):
+            pickup_state, pickup_route = compute_routestate_and_route_with_insertion(
+                route=route,
+                insert_position=insert_position,
+                stop=pickup_stop,
                 darp_config=darp_config,
-                route=pickup_route,
-                requests=darp_instance.requests,
-                travel_time=darp_instance.travel_time,
-                travel_distance=darp_instance.travel_distance,
-                early_exit_on_violation=use_early_exit,
+                darp_instance=darp_instance,
+                use_early_exit=use_early_exit,
             )
-            pickup_state.recompute()
 
+            # Überprüfung, ob die entstandene Route zulässig ist
             if not pickup_state.is_feasible():
                 continue
 
@@ -111,42 +136,38 @@ def best_insertion_for_request(
             # Wenn die aktuelle Kandidatenlösung einen niedrigeren Zielfunktionswert
             # als die aktuell beste Pickup-Kandidatenlösung besitzt, überschreibe diese
             if candidate_solution_objective_value < best_pickup_solution_objective_value:
-                best_pickup_position = i
+                best_pickup_position = insert_position
                 best_pickup_route = pickup_route
                 best_pickup_solution_objective_value = candidate_solution_objective_value
                 best_route_index = route_index
 
+    # Konnte keine zulässige Einfügeposition für den Abholknoten bestimmt werden, wird None zurückgegeben
     if best_pickup_route is None:
         return None
 
-    # Phase 2: Ermittle die beste Einfügeposition für den Zielknoten der Anfrage
-    # innerhalb derselben Route des Abholknotens
+    # Phase 2: Ermittle die beste Einfügeposition für den Zielknoten der Anfrage innerhalb derselben Route des
+    # Abholknotens
     route_with_pickup = best_pickup_route
     route_length = len(route_with_pickup.stops)
-
-    for j in range(best_pickup_position + 1, route_length + 1):
-        delivery_route = Route(
-            vehicle=route_with_pickup.vehicle,
-            stops=list(route_with_pickup.stops),
-        )
-        delivery_route.stops.insert(j, delivery_stop)
-
-        delivery_state = RouteState(
+    for delivery_positon in range(best_pickup_position + 1, route_length + 1):
+        delivery_state, delivery_route = compute_routestate_and_route_with_insertion(
+            route=route_with_pickup,
+            insert_position=delivery_positon,
+            stop=delivery_stop,
             darp_config=darp_config,
-            route=delivery_route,
-            requests=darp_instance.requests,
-            travel_time=darp_instance.travel_time,
-            travel_distance=darp_instance.travel_distance,
-            early_exit_on_violation=use_early_exit,
+            darp_instance=darp_instance,
+            use_early_exit=use_early_exit,
         )
-        delivery_state.recompute()
 
+        # Überprüfung, ob die entstandene Route zulässig ist
         if not delivery_state.is_feasible():
             continue
 
+        # Bilde die Liste an RouteStates für die Kandidaten-Lösung
         candidate_route_states = list(current_route_states)
         candidate_route_states[best_route_index] = delivery_state
 
+        # Berechne den Zielfunktionswert für die Kandidaten-Lösung
         candidate_solution_objective_value = compute_solution_objective_function(
             route_states=candidate_route_states,
             objective_config=objective_config
@@ -158,13 +179,14 @@ def best_insertion_for_request(
             best_whole_solution_objective_value = candidate_solution_objective_value
             best_whole_route = delivery_route
 
+    # Konnte keine zulässige Einfügeposition für den Zielknoten bestimmt werden, wird None zurückgegeben
     if best_whole_route is None:
         return None
 
     return best_route_index, best_whole_route
 
 
-def _greedy_construction_routes_with_order(
+def greedy_construction_routes_with_order(
         *,
         darp_instance: DarpInstance,
         request_order: list[UUID],
@@ -176,10 +198,12 @@ def _greedy_construction_routes_with_order(
     Ablauf:
 
     1. Initialisierung der Fahrzeugrouten
-    2. Sequenzielle Bearbeitung der Anfragen durch die Methode best_insertion_for_request()
+    2. Sequenzielle Bearbeitung der Anfragen durch die Methode `best_insertion_for_request()`
     3. Speichern von erfolgreichen und nicht erfolgreichen Anfragen sowie den entstandenen Routen
     4. Rückgabe des resultierenden DarpSolution-Objekts
     """
+
+    # Initialisierung der Fahrzeugrouten
     routes: list[Route] = [
         Route(vehicle=vehicle, stops=[])
         for vehicle in darp_instance.vehicles
@@ -189,6 +213,7 @@ def _greedy_construction_routes_with_order(
     unserved_requests: list[UUID] = []
 
     for request_id in request_order:
+        # Bestimme die beste Einfügeposition der Anfrage innerhalb der aktuellen Routenstruktur
         result = best_insertion_for_request(
             routes=routes,
             request_id=request_id,
@@ -196,10 +221,13 @@ def _greedy_construction_routes_with_order(
             use_early_exit=use_early_exit,
         )
 
+        # Konnte keine zulässige Einfügeposition gefunden werden, markiere die Anfrage als "nicht bedient"
         if result is None:
             unserved_requests.append(request_id)
             continue
 
+        # Konnte eine zulässige Einfügeposition gefunden werden, markiere die Anfrage als "bedient" und aktualisiere die
+        # aktuelle Routenstruktur
         route_index, new_route = result
         routes[route_index] = new_route
         served_requests.append(request_id)
@@ -216,14 +244,16 @@ def sort_by_earliest_desired_pickup_time(*, darp_instance: DarpInstance) -> list
     """
     Sortiert die Anfrage-IDs aufsteigend nach gewünschter Abholzeit.
 
-    Hinweis: In der Arbeit wurde die Vorsortierung für den spätest möglichen Abholzeitpunkt gewählt. Hier wird der
-    gewünschte Abholzeitpunkt als Sortierungsargument gewählt. Dies liegt daran, dass auf den gewünschten Abholzeitpunkt
-    direkt zugegriffen werden, während der spätest möglichen Abholzeitpunkt pro Anfrage abhängig von der DarpConfig
-    berechnet werden müsste.
-    Der spätest möglichen Abholzeitpunkt setzt aber aus dem gewünschten Abholzeitpunkt + pickup_buffer aus der DarpConfig
-    zusammen. Da der pickup_buffer eine fest definierte Minutendauer ist, kann hier analog der gewünschte Abholzeitpunkt
-    verwendet werden.
+    Hinweis:
+    In der Arbeit wurde die Vorsortierung für den spätest möglichen Abholzeitpunkt gewählt. Hier wird der gewünschte
+    Abholzeitpunkt als Sortierungsargument gewählt. Dies liegt daran, dass auf den gewünschten Abholzeitpunkt direkt
+    zugegriffen werden, während der spätest möglichen Abholzeitpunkt pro Anfrage abhängig von der DarpConfig berechnet
+    werden müsste.
+    Der spätest möglichen Abholzeitpunkt setzt aber aus dem gewünschten Abholzeitpunkt + pickup_buffer aus der
+    DarpConfig zusammen. Da der pickup_buffer eine fest definierte Minutendauer ist, kann hier analog der gewünschte
+    Abholzeitpunkt verwendet werden.
     """
+
     return sorted(
         darp_instance.request_order,
         key=lambda request_id: darp_instance.requests[request_id].desired_pickup_time,
@@ -234,7 +264,8 @@ def greedy_construction_routes(*, darp_instance: DarpInstance) -> DarpSolution:
     """
     Baseline-Greedy-Verfahren ohne Vorsortierung und ohne Early Exit.
     """
-    return _greedy_construction_routes_with_order(
+
+    return greedy_construction_routes_with_order(
         darp_instance=darp_instance,
         request_order=darp_instance.request_order,
         use_early_exit=False,
@@ -248,16 +279,18 @@ def greedy_construction_routes_time_restrictive_scenario(
     """
     Erweiterte Greedy-Variante mit Vorsortierung und early-exit-Mechanismus
 
-    Vorsortierung wird nach der frühsten gewünschten Abholzeit durchgeführt
+    Die Vorsortierung wird nach dem frühsten gewünschten Abholzeit durchgeführt
 
-    Early-Exit-Mechanismus bricht die Zulässigkeitsprüfung und die Berechnung der Routen-Metriken frühzeitig ab, sobald
-    eine Nebenbedingung des DARPs verletzt wird.
+    Early-Exit-Mechanismus:
+    Die Zulässigkeitsprüfung und die Berechnung der Routen-Metriken wird frühzeitig abgebrochen, sobald eine
+    Nebenbedingung des DARPs verletzt wird.
     """
+
     sorted_request_order = sort_by_earliest_desired_pickup_time(
         darp_instance=darp_instance,
     )
 
-    return _greedy_construction_routes_with_order(
+    return greedy_construction_routes_with_order(
         darp_instance=darp_instance,
         request_order=sorted_request_order,
         use_early_exit=True,
