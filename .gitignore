@@ -14,8 +14,6 @@ darp_algorithms/pyvenv.cfg
 
 .DS_Store
 
-tests/
-
 .idea/
 .vscode/
 
@@ -24,3 +22,4 @@ cache/
 artifacts/evaluation_results.csv
 artifacts/plots/*.png
 artifacts/summary_tables/*.csv
+artifacts/summary_tables/*.tex

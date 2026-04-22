@@ -186,7 +186,7 @@ def best_insertion_for_request(
     return best_route_index, best_whole_route
 
 
-def _greedy_construction_routes_with_order(
+def greedy_construction_routes_with_order(
         *,
         darp_instance: DarpInstance,
         request_order: list[UUID],
@@ -265,7 +265,7 @@ def greedy_construction_routes(*, darp_instance: DarpInstance) -> DarpSolution:
     Baseline-Greedy-Verfahren ohne Vorsortierung und ohne Early Exit.
     """
 
-    return _greedy_construction_routes_with_order(
+    return greedy_construction_routes_with_order(
         darp_instance=darp_instance,
         request_order=darp_instance.request_order,
         use_early_exit=False,
@@ -290,7 +290,7 @@ def greedy_construction_routes_time_restrictive_scenario(
         darp_instance=darp_instance,
     )
 
-    return _greedy_construction_routes_with_order(
+    return greedy_construction_routes_with_order(
         darp_instance=darp_instance,
         request_order=sorted_request_order,
         use_early_exit=True,
