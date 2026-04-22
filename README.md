@@ -4,7 +4,7 @@
 
 Christoph Vorer  
 Masterarbeit – Universität Münster  
-Lehrstuhl für Effiziente Algorithmen
+Lehrstuhl für Effiziente Algorithmen und Algorithm Engineering
 
 ---
 
