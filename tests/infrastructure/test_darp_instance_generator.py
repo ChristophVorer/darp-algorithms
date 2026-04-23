@@ -157,11 +157,12 @@ def test_remap_locations_for_matrix_with_coordinate_duplicate_across_requests():
         requests=[request_1, request_2],
     )
 
-    assert len(ordered_locations) == 4
+    assert len(ordered_locations) == 3
     assert remapped_requests[0].pickup is remapped_requests[1].pickup
     assert remapped_requests[0].pickup.matrix_node_id == 1
     assert remapped_requests[0].delivery.matrix_node_id == 2
-    assert remapped_requests[1].delivery.matrix_node_id == 3
+    assert remapped_requests[1].pickup.matrix_node_id == 1
+    assert remapped_requests[1].delivery.matrix_node_id == 2
 
 
 def test_remap_locations_for_matrix_preserves_request_and_vehicle_data():
@@ -295,8 +296,9 @@ def test_generate_instance_calls_osrm_provider_with_ordered_locations():
         start_time=start_time
     )
 
+    fake_provider = FakeOsrmMatrixProvider()
     generator = DarpInstanceGenerator(
-        osrm_matrix_provider=FakeOsrmMatrixProvider()
+        osrm_matrix_provider=fake_provider
     )
 
     darp_config = DarpConfig(

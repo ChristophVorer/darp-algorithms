@@ -10,7 +10,7 @@ Lehrstuhl für Effiziente Algorithmen und Algorithm Engineering
 
 ## Projektbeschreibung
 
-Dieses Projekt implementiert im Rahmen meiner Masterarbeit zum Thema  
+In diesem Projekt implementiere ich im Rahmen meiner Masterarbeit zum Thema  
 *"Meta-heuristische Verfahren zur Lösung von Varianten des Dial-a-Ride-Problems für Ridepooling-Dienste"*  
 ein modulares und hoch konfigurierbares Experiment-System zur Evaluation von Lösungsverfahren für das
 Dial-a-Ride-Problem (DARP).

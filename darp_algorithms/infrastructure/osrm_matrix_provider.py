@@ -88,11 +88,9 @@ class OsrmMatrixProvider:
         data = response.json()
 
         if data.get("code") != "Ok":
-            raise RuntimeError(
-                f"OSRM Table Service lieferte keinen erfolgreichen Status: {data}"
-            )
+            raise RuntimeError(f"OSRM Table Service lieferte keinen erfolgreichen Status: {data}")
 
-        # BOF Validierung der Anfrage-Daten
+        # Validierung der Anfrage-Daten
         duration_matrix = data.get("durations")
         distance_matrix_in_meter = data.get("distances")
 
@@ -124,9 +122,7 @@ class OsrmMatrixProvider:
         """
 
         def travel_time(a: Location, b: Location) -> timedelta:
-            seconds = matrix_data.time_matrix_seconds[
-                a.matrix_node_id
-            ][b.matrix_node_id]
+            seconds = matrix_data.time_matrix_seconds[a.matrix_node_id][b.matrix_node_id]
             return timedelta(seconds=float(seconds))
 
         return travel_time
@@ -140,9 +136,7 @@ class OsrmMatrixProvider:
 
         def travel_distance(a: Location, b: Location) -> float:
             return float(
-                matrix_data.distance_matrix_kilometers[
-                    a.matrix_node_id
-                ][b.matrix_node_id]
+                matrix_data.distance_matrix_kilometers[a.matrix_node_id][b.matrix_node_id]
             )
 
         return travel_distance
@@ -154,7 +148,7 @@ class OsrmMatrixProvider:
         Quelle: https://project-osrm.org/docs/v5.24.0/api/#
         """
 
-        # OSRM erwartet longitude,latitude
+        # OSRM erwartet "longitude,latitude"
         return ";".join(f"{loc.lon},{loc.lat}" for loc in locations)
 
     @staticmethod
@@ -169,9 +163,8 @@ class OsrmMatrixProvider:
                 raise RuntimeError("OSRM-Matrix ist nicht quadratisch.")
             for column_index, column_value in enumerate(row):
                 if column_value is None:
-                    # Der Wert "a7f3c9d2" wird später nur zur Identifizierung der Exception genutzt
                     raise OsrmMatrixValidationException(
                         f"Die OSRM-Matrix enthält einen None-Wert an der Position "
                         f"({row_index},{column_index}). "
-                        "Es konnte keine Route für dieses Location-Paar berechnet werden.(a7f3c9d2)"
+                        "Es konnte keine Route für dieses Location-Paar berechnet werden."
                     )

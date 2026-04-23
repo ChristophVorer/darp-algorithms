@@ -62,6 +62,7 @@ def write_evaluation_result_to_csv_file(
 
     Dazu wird jedes EvaluationsResult in eine Zeile innerhalb der Datei des `output_path` konvertiert.
     """
+
     if not results:
         raise ValueError("Die Result-Liste darf nicht leer sein.")
 
@@ -87,6 +88,7 @@ def print_evaluation_result(result: EvaluationResult) -> None:
     """
     Gibt ausgewählte Metriken des Evaluation-Result zur Laufzeit in der Konsole aus.
     """
+
     print("\n=== Evaluation Result ===")
     print(f"Experiment-Name:                                      {result.experiment_name}")
     print(f"Szenario:                                             {result.scenario_name}")
@@ -105,7 +107,7 @@ def print_evaluation_result(result: EvaluationResult) -> None:
     print(f"  Anzahl der Routen:                                  {result.number_of_routes}")
     print(f"  Zulässige Routen:                                   {result.number_of_feasible_routes}")
     print(f"  Unzulässige Routen:                                 {result.number_of_infeasible_routes}")
-    print(f"  Insgesamte Violations:                              {result.number_of_total_violations}")
+    print(f"  Gesamt-Violations:                              {result.number_of_total_violations}")
     print(f"  Gesamt-Fahrtdauer:                                  {result.total_travel_time:.2f} s")
     print(f"  Gesamt-Fahrtdistanz:                                {result.total_travel_distance:.2f} km")
 

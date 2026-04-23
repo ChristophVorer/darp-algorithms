@@ -9,6 +9,7 @@ env/
 
 darp_algorithms/bin/
 darp_algorithms/pyvenv.cfg
+darp_algorithms/evaluation/evaluation_analysis.py
 
 .pytest_cache/
 

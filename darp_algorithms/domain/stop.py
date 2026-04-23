@@ -1,11 +1,10 @@
 from __future__ import annotations
 
-from .location import Location
-from .enums.stop_kind import StopKind
 from dataclasses import dataclass
-from datetime import datetime
-from typing import Optional
 from uuid import UUID
+
+from .enums.stop_kind import StopKind
+from .location import Location
 
 
 @dataclass(frozen=True, slots=True)

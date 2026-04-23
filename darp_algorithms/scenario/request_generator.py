@@ -20,6 +20,7 @@ class RequestGenerator:
 
     Standardmäßig wird dabei eine Bounding-Box um Münster herum gebildet (siehe ScenarioConfig)
     """
+
     scenario_config: ScenarioConfig
     random_generator: random.Random = field(init=False)
 
@@ -28,6 +29,7 @@ class RequestGenerator:
         Gibt ein Random-Objekt zur Generierung von Zufallswerten zurück.
         Das Random-Objekt wird mit dem Random-Seed aus der ScenarioConfig initialisiert.
         """
+
         self.random_generator = random.Random(self.scenario_config.random_seed)
 
     def generate_requests(self) -> list[Request]:
@@ -35,6 +37,7 @@ class RequestGenerator:
         Generiert eine Menge von synthetischen Anfragen gemäß der ScenarioConfig, die an den DemandGenerator übergeben
         wurde.
         """
+
         if self.scenario_config.number_of_requests < 0:
             raise ValueError("Die Anzahl der Anfragen darf nicht negativ sein.")
 
@@ -51,6 +54,7 @@ class RequestGenerator:
         Generiert eine einzelne synthetische Anfrage gemäß der ScenarioConfig, die an den DemandGenerator übergeben
         wurde.
         """
+
         for _ in range(100):
             # Es wird bis zu 100-mal versucht ein Koordinaten-Paar zu erstellen, dessen Distanz innerhalb der minimalen
             # und der maximalen Distanz liegt (siehe ScenarioConfig).
@@ -120,6 +124,7 @@ class RequestGenerator:
         Quelle: https://www.movable-type.co.uk/scripts/latlong.html
         (Equirectangular approximation)
         """
+
         latitude_km = 111.0 * (a.lat - b.lat)
         mean_latitude_radians = math.radians((a.lat + b.lat) / 2.0)
         longitude_km = 111.0 * math.cos(mean_latitude_radians) * (a.lon - b.lon)
